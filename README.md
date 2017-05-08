@@ -26,7 +26,7 @@ let settings = {
 		port: 9200,
 		log: ['info', 'error']
 	},
-	data: { // absolute paths to the data folders (see digiwhist/data-folder)
+	data: { // absolute paths to the data folders (see https://github.com/digiwhist/opentender-data)
 		shared: '/var/www/opentender/data/shared',
 		path: '/var/www/opentender/data/backend',
 		tenderapi: '/var/www/opentender/data/tenderapi'
