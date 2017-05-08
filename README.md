@@ -1,6 +1,6 @@
 # Opentender Portal Data Backend
 
-Provides the Data for the Opentender Portal Frontend
+Provides the Data for the Opentender Portal
 
 written in Javascript for NodeJS 6.x
 
@@ -53,7 +53,7 @@ let settings = {
 
 `npm run stopwords` to create a joined stopword list file for the DB
 
-(Note: elastic search only uses this file on import, so data must be reimported after updating)
+(Note: elastic search only uses this file on import, so data must be re-imported after updating)
 
 ### Downloads
 
