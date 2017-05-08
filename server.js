@@ -327,12 +327,17 @@ api.init(err => {
 		console.log('Opentender Api is listening on: http://%s:%d (%s)', listener.address().address, listener.address().port, app.settings.env);
 		api.getCountriesStats((err, countries) => {
 			if (countries) {
+				let unused = {};
 				Object.keys(countries).forEach(key => {
 					let portal = portals.active.find(portal => portal.id === key);
-					if (!portal && (key !== '?') && countries[key] > 50) {
-						console.log('Unused Portal Data available for', key, countries[key]);
+					if (!portal) {
+						unused[key] = countries[key];
 					}
 				});
+				if (Object.keys(unused).length>0) {
+					console.log('Unused Portal Data available with not supported/invalid country codes:');
+					console.log(JSON.stringify(unused));
+				}
 			}
 		});
 	});

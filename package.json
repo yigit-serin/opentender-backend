@@ -1,11 +1,12 @@
 {
   "name": "opentender-portal-backend",
-  "private": true,
-  "version": "0.0.1",
-  "description": "Opentender Portal Data Backend Server",
+  "version": "0.0.2",
+  "description": "Opentender Portal Backend Server",
+  "author": "okfde",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/digiwhist/opentender-portal-api.git"
+    "url": "https://github.com/digiwhist/opentender-backend.git"
   },
   "scripts": {
     "server": "node server.js",
@@ -13,7 +14,6 @@
     "import": "cd bin && node import_tenderapi.js",
     "downloads": "cd bin && node save_downloads.js"
   },
-  "license": "MIT",
   "dependencies": {
     "ajv": "^4.7.5",
     "async": "^2.0.1",

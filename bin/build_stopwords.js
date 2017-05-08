@@ -18,6 +18,10 @@ async.forEachSeries(langs, function (lang, next) {
 	});
 	next();
 }, function () {
-	fs.writeFileSync(path.join(config.data.path, 'stopwords.txt'), all.join('\n'));
-	console.log('done');
+	if (all.length > 0) {
+		fs.writeFileSync(path.join(config.data.path, 'stopwords.txt'), all.join('\n'));
+		console.log('done');
+	} else {
+		console.log('nothing to write found');
+	}
 });
