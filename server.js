@@ -186,6 +186,19 @@ let registerCountryApi = country => {
 		});
 	});
 
+	app.post(api_path + 'indicators/stats', checkCache, (req, res) => {
+		api.getIndicatorStats(req.body, country_id, (err, data) => {
+			if (err) {
+				if (err === 404) {
+					return res.sendStatus(404);
+				}
+				console.log(err);
+				return res.sendStatus(500);
+			}
+			sendAndAddToCache(req, res, {data: data});
+		});
+	});
+
 	app.get(api_path + 'company/similar/:id', checkCache, (req, res) => {
 		api.searchSimilarCompany(req.params.id, country_id, (err, data) => {
 			if (err) {
