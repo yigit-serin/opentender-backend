@@ -18,7 +18,7 @@ let warm_viz = (viz, cb) => {
 	async.forEachSeries(portals, (portal, next) => {
 		let url = 'http://' + config.listen.host + ':' + config.listen.port + '/api/' + portal.id.toLowerCase() + '/viz/ids/' + viz;
 		console.log(url);
-		request(url, (error, response, body) => {
+		request(url, {timeout: 300000}, (error, response, body) => {
 			if (error) console.log(error);
 			next();
 		});
