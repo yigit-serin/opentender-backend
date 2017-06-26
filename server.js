@@ -35,7 +35,7 @@ let addToCache = (req, data) => {
 	// console.log('add to cache', url);
 	let c = cache.get(url);
 	if (!c) {
-		cache.put(url, {url: url, data: data}, 60 * 60 * 60 * 1000);
+		cache.put(url, {url: url, data: data}, 60 * 60 * 60 * 60 * 1000);
 	}
 };
 
