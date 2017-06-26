@@ -20,7 +20,7 @@ app.all('*', (req, res, next) => {
 	res.header('Access-Control-Allow-Origin', '*');
 	res.header('Access-Control-Allow-Methods', 'GET,POST');
 	res.header('Access-Control-Allow-Headers', 'Content-Type');
-	if ('OPTIONS' == req.method) {
+	if ('OPTIONS' === req.method) {
 		res.sendStatus(200);
 	} else {
 		next();
@@ -35,7 +35,8 @@ let addToCache = (req, data) => {
 	// console.log('add to cache', url);
 	let c = cache.get(url);
 	if (!c) {
-		cache.put(url, {url: url, data: data}, 60 * 60 * 60 * 60 * 1000);
+		let maximum_waittime = 2147483647;
+		cache.put(url, {url: url, data: data}, maximum_waittime); // 60 * 60 * 60 * 60 * 1000);
 	}
 };
 
@@ -347,7 +348,7 @@ api.init(err => {
 						unused[key] = countries[key];
 					}
 				});
-				if (Object.keys(unused).length>0) {
+				if (Object.keys(unused).length > 0) {
 					console.log('Unused Portal Data available with not supported/invalid country codes:');
 					console.log(JSON.stringify(unused));
 				}
