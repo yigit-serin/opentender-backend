@@ -5,6 +5,7 @@ const express = require('express');
 const path = require('path');
 const cache = require('memory-cache');
 const bodyParser = require('body-parser');
+const helmet = require('helmet');
 
 const Api = require('./lib/api.js');
 const config = require('./config.js');
@@ -16,9 +17,10 @@ let useCache = !config.disableCache;
 let api = new Api(config);
 let app = express();
 
+app.use(helmet());
 app.all('*', (req, res, next) => {
 	res.header('Access-Control-Allow-Origin', '*');
-	res.header('Access-Control-Allow-Methods', 'GET,POST');
+	res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
 	res.header('Access-Control-Allow-Headers', 'Content-Type');
 	if ('OPTIONS' === req.method) {
 		res.sendStatus(200);
