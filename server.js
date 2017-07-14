@@ -114,6 +114,16 @@ let registerCountryApi = country => {
 		});
 	});
 
+	app.get(api_path + 'authority/nuts', checkCache, (req, res) => {
+		api.getAuthorityNuts(country_id, (err, data) => {
+			if (err) {
+				console.log(err);
+				return res.sendStatus(500);
+			}
+			sendAndAddToCache(req, res, {data: data});
+		});
+	});
+
 	app.get(api_path + 'sector/list/main/:lang?', checkCache, (req, res) => {
 		api.getCPVMainUsage(country_id, (err, data) => {
 			if (err) {
@@ -176,12 +186,22 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.post(api_path + 'company/stats', checkCache, (req, res) => {
+	app.get(api_path + 'company/stats', checkCache, (req, res) => {
 		api.getCompanyStats(req.body.ids, country_id, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
 				}
+				console.log(err);
+				return res.sendStatus(500);
+			}
+			sendAndAddToCache(req, res, {data: data});
+		});
+	});
+
+	app.post(api_path + 'company/nuts', checkCache, (req, res) => {
+		api.getCompanyNuts(country_id, (err, data) => {
+			if (err) {
 				console.log(err);
 				return res.sendStatus(500);
 			}
