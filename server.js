@@ -147,8 +147,8 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.get(api_path + 'sector/id/:id/:lang?', checkCache, (req, res) => {
-		api.getCPVStats(req.params.id, req.params.lang, country_id, (err, data) => {
+	app.post(api_path + 'sector/stats', checkCache, (req, res) => {
+		api.getCPVStats(req.body, country_id, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
@@ -186,8 +186,8 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.get(api_path + 'company/stats', checkCache, (req, res) => {
-		api.getCompanyStats(req.body.ids, country_id, (err, data) => {
+	app.post(api_path + 'company/stats', checkCache, (req, res) => {
+		api.getCompanyStats(req.body, country_id, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
@@ -249,7 +249,7 @@ let registerCountryApi = country => {
 	});
 
 	app.post(api_path + 'authority/stats', checkCache, (req, res) => {
-		api.getAuthorityStats(req.body.ids, country_id, (err, data) => {
+		api.getAuthorityStats(req.body, country_id, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
