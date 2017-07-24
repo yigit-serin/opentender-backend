@@ -104,6 +104,16 @@ let registerCountryApi = country => {
 		});
 	});
 
+	app.get(api_path + 'company/nuts', checkCache, (req, res) => {
+		api.getCompanyNutsStats(country_id, (err, data) => {
+			if (err) {
+				console.log(err);
+				return res.sendStatus(500);
+			}
+			sendAndAddToCache(req, res, {data: data});
+		});
+	});
+
 	app.post(api_path + 'authority/search', checkCache, (req, res) => {
 		api.searchAuthority(req.body, country_id, (err, data) => {
 			if (err) {
