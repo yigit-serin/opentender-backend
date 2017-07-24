@@ -115,7 +115,7 @@ let registerCountryApi = country => {
 	});
 
 	app.get(api_path + 'authority/nuts', checkCache, (req, res) => {
-		api.getAuthorityNuts(country_id, (err, data) => {
+		api.getAuthorityNutsStats(country_id, (err, data) => {
 			if (err) {
 				console.log(err);
 				return res.sendStatus(500);
@@ -124,8 +124,8 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.get(api_path + 'sector/list/main/:lang?', checkCache, (req, res) => {
-		api.getCPVMainUsage(country_id, (err, data) => {
+	app.get(api_path + 'sector/list/main', checkCache, (req, res) => {
+		api.getCPVUsageStats(country_id, (err, data) => {
 			if (err) {
 				console.log(err);
 				return res.sendStatus(500);
@@ -136,6 +136,32 @@ let registerCountryApi = country => {
 
 	app.post(api_path + 'autocomplete', checkCache, (req, res) => {
 		api.autocomplete(req.body.entity, req.body.field, req.body.search, country_id, (err, data) => {
+			if (err) {
+				if (err === 404) {
+					return res.sendStatus(404);
+				}
+				console.log(err);
+				return res.sendStatus(500);
+			}
+			sendAndAddToCache(req, res, {data: data});
+		});
+	});
+
+	app.post(api_path + 'market/stats', checkCache, (req, res) => {
+		api.getMarketAnalysisStats(req.body, country_id, (err, data) => {
+			if (err) {
+				if (err === 404) {
+					return res.sendStatus(404);
+				}
+				console.log(err);
+				return res.sendStatus(500);
+			}
+			sendAndAddToCache(req, res, {data: data});
+		});
+	});
+
+	app.post(api_path + 'home/stats', checkCache, (req, res) => {
+		api.getHomeStats(country_id, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
@@ -200,7 +226,7 @@ let registerCountryApi = country => {
 	});
 
 	app.post(api_path + 'company/nuts', checkCache, (req, res) => {
-		api.getCompanyNuts(country_id, (err, data) => {
+		api.getCompanyNutsStats(country_id, (err, data) => {
 			if (err) {
 				console.log(err);
 				return res.sendStatus(500);
@@ -275,7 +301,7 @@ let registerCountryApi = country => {
 	});
 
 	app.get(api_path + 'quality/usage', checkCache, (req, res) => {
-		api.getUsage(country_id, (err, data) => {
+		api.getFieldsUsage(country_id, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
@@ -313,19 +339,6 @@ let registerCountryApi = country => {
 
 	app.get(api_path + 'authority/similar/:id', checkCache, (req, res) => {
 		api.searchSimilarAuthority(req.params.id, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
-		});
-	});
-
-	app.get(api_path + 'viz/ids/:ids', checkCache, (req, res) => {
-		api.getViz(req.params.ids, country_id, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
