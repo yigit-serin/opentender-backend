@@ -196,6 +196,19 @@ let registerCountryApi = country => {
 		});
 	});
 
+	app.post(api_path + 'region/stats', checkCache, (req, res) => {
+		api.getRegionStats(req.body, country_id, (err, data) => {
+			if (err) {
+				if (err === 404) {
+					return res.sendStatus(404);
+				}
+				console.log(err);
+				return res.sendStatus(500);
+			}
+			sendAndAddToCache(req, res, {data: data});
+		});
+	});
+
 	app.get(api_path + 'tender/id/:id', checkCache, (req, res) => {
 		api.getTender(req.params.id, (err, data) => {
 			if (err) {
