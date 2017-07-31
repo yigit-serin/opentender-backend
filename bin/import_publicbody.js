@@ -34,9 +34,8 @@ let load = (portal, next) => {
 	next();
 };
 
-
-let doIt = function (cb) {
-	async.forEachSeries(portals, load, (err) => {
+let doIt = cb => {
+	async.forEachSeries(portals, load, err => {
 		if (err) {
 			return cb(err);
 		}

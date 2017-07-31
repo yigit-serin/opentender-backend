@@ -19,13 +19,15 @@ const data_path = config.data.tenderapi + '/import/';
 const schema = JSON.parse(fs.readFileSync(config.data.shared + '/schema.json').toString());
 const validate = ajv.compile(schema);
 
-const check = function (filename, cb) {
+const check = (filename, cb) => {
 	console.log('checking', filename);
 	fs.readFile(data_path + filename, (err, content) => {
 		lzma.decompress(content, (decompressedResult) => {
 			let array = JSON.parse(decompressedResult.toString());
 			convert.cleanTenderApiDocs(array);
-			if (!validate(array)) console.log(validate.errors);
+			if (!validate(array)) {
+				console.log(validate.errors);
+			}
 			cb();
 		});
 	});
@@ -33,7 +35,7 @@ const check = function (filename, cb) {
 
 fs.readdir(data_path, (err, items) => {
 	items = items.filter((item) => {
-		return (path.extname(item) == '.xz');
+		return (path.extname(item) === '.xz');
 	});
 	async.forEachSeries(items, check, () => console.log('done.'));
 });

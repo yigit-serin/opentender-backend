@@ -43,10 +43,10 @@ let dump = (country, cb) => {
 	let totalItems = 0;
 	compress.pipe(outputStream);
 	let serialize = ndjson.serialize();
-	serialize.on('data', function (line) {
+	serialize.on('data', line => {
 		compress.write(line);
 	});
-	outputStream.on('close', function () {
+	outputStream.on('close', () => {
 		setTimeout(() => {
 			let result = {filename: filename, size: fs.statSync(fullFilename).size, country: countryId, count: totalItems};
 			console.log(JSON.stringify(result));
@@ -89,7 +89,9 @@ store.init((err) => {
 		// if (!portal.id) return next();
 		dump(portal, next);
 	}, err => {
-		if (err) console.log(err);
+		if (err) {
+			console.log(err);
+		}
 		store.close(() => {
 			status.stop();
 			fs.writeFileSync(path.join(downloadsFolder, 'downloads.json'), JSON.stringify(results, null, '\t'));
