@@ -183,6 +183,19 @@ let registerCountryApi = country => {
 		});
 	});
 
+	app.get(api_path + 'sector/id/:id', checkCache, (req, res) => {
+		api.getCPV(req.params.id, (err, data) => {
+			if (err) {
+				if (err === 404) {
+					return res.sendStatus(404);
+				}
+				console.log(err);
+				return res.sendStatus(500);
+			}
+			sendAndAddToCache(req, res, {data: data});
+		});
+	});
+
 	app.post(api_path + 'sector/stats', checkCache, (req, res) => {
 		api.getCPVStats(req.body, country_id, (err, data) => {
 			if (err) {
