@@ -230,7 +230,7 @@ let registerCountryApi = country => {
 	});
 
 	app.post(api_path + 'sector/stats', checkCache, (req, res) => {
-		api.getCPVStats(req.body, country_id, (err, data) => {
+		api.getSectorStats(req.body, country_id, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
