@@ -11,7 +11,6 @@ const Api = require('./lib/api.js');
 const config = require('./config.js');
 
 let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString());
-
 let useCache = !config.disableCache;
 
 let api = new Api(config);
@@ -22,7 +21,7 @@ app.all('*', (req, res, next) => {
 	res.header('Access-Control-Allow-Origin', '*');
 	res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
 	res.header('Access-Control-Allow-Headers', 'Content-Type');
-	if ('OPTIONS' === req.method) {
+	if (req.method === 'OPTIONS') {
 		res.sendStatus(200);
 	} else {
 		next();
@@ -32,13 +31,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 let addToCache = (req, data) => {
-	if (!useCache) return;
+	if (!useCache) {
+		return;
+	}
 	let url = req.url + '?' + JSON.stringify(req.body) + JSON.stringify(req.params);
 	// console.log('add to cache', url);
 	let c = cache.get(url);
 	if (!c) {
-		let maximum_waittime = 2147483647;
-		cache.put(url, {url: url, data: data}, maximum_waittime); // 60 * 60 * 60 * 60 * 1000);
+		let maximum_waittime = 2147483647; // TODO: switch to external memcached
+		cache.put(url, {url: url, data: data}, maximum_waittime);
 	}
 };
 
@@ -49,7 +50,9 @@ let sendAndAddToCache = (req, res, data) => {
 };
 
 let checkCache = (req, res, cb) => {
-	if (!useCache) return cb();
+	if (!useCache) {
+		return cb();
+	}
 	let url = req.url + '?' + JSON.stringify(req.body) + JSON.stringify(req.params);
 	let c = cache.get(url);
 	if (c) {
@@ -69,13 +72,43 @@ app.get('/api/test.json', (req, res) => {
 	res.send({ok: 'yes'});
 });
 
-app.get('/api/portals/countries-stats', checkCache, (req, res) => {
+app.get('/api/portals/list', (req, res) => {
+	res.send({data: portals});
+});
+
+app.get('/api/portals/stats', checkCache, (req, res) => {
 	api.getCountriesStats((err, data) => {
 		if (err) {
 			console.log(err);
 			return res.sendStatus(500);
 		}
-		sendAndAddToCache(req, res, {data: data});
+		let count_all = 0;
+		portals.forEach((p) => {
+			if (p.id !== 'eu') {
+				count_all += data[p.id] || 0;
+			}
+		});
+		data['eu'] = count_all;
+		let list = portals.map(p => {
+			return {
+				id: p.id,
+				name: p.name,
+				value: data[p.id] || 0
+			};
+		});
+		list.sort((a, b) => {
+			if (a.id === 'eu') {
+				return -1;
+			}
+			if (a.name < b.name) {
+				return -1;
+			}
+			if (a.name > b.name) {
+				return 1;
+			}
+			return 0;
+		});
+		sendAndAddToCache(req, res, {data: list});
 	});
 });
 
@@ -387,7 +420,7 @@ let registerCountryApi = country => {
 	});
 
 };
-portals.active.forEach(registerCountryApi);
+portals.forEach(registerCountryApi);
 
 // error handlers
 
@@ -414,7 +447,7 @@ api.init(err => {
 			if (countries) {
 				let unused = {};
 				Object.keys(countries).forEach(key => {
-					let portal = portals.active.find(portal => portal.id === key);
+					let portal = portals.find(p => p.id === key);
 					if (!portal) {
 						unused[key] = countries[key];
 					}
