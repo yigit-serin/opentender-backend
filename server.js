@@ -382,7 +382,7 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.get(api_path + 'location/map.geojson', checkCache, (req, res) => {
+	app.get(api_path + 'location/map.geo.json', checkCache, (req, res) => {
 		api.getLocationsMap((err, data) => {
 			if (err) {
 				console.log(err);
