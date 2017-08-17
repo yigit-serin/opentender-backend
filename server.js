@@ -34,7 +34,7 @@ let addToCache = (req, data) => {
 	if (!useCache) {
 		return;
 	}
-	let url = req.url + '?' + JSON.stringify(req.body) + JSON.stringify(req.params);
+	let url = req.url + '|' + JSON.stringify(req.body) + JSON.stringify(req.params);
 	// console.log('add to cache', url);
 	let c = cache.get(url);
 	if (!c) {
@@ -42,7 +42,6 @@ let addToCache = (req, data) => {
 		cache.put(url, {url: url, data: data}, maximum_waittime);
 	}
 };
-
 
 let sendAndAddToCache = (req, res, data) => {
 	addToCache(req, data);
@@ -53,7 +52,7 @@ let checkCache = (req, res, cb) => {
 	if (!useCache) {
 		return cb();
 	}
-	let url = req.url + '?' + JSON.stringify(req.body) + JSON.stringify(req.params);
+	let url = req.url + '|' + JSON.stringify(req.body) + JSON.stringify(req.params);
 	let c = cache.get(url);
 	if (c) {
 		// console.log('request found in cache', url);
@@ -217,7 +216,7 @@ let registerCountryApi = country => {
 	});
 
 	app.get(api_path + 'sector/id/:id', checkCache, (req, res) => {
-		api.getCPV(req.params.id, (err, data) => {
+		api.getCPV({id: req.params, lang: req.query.lang}, (err, data) => {
 			if (err) {
 				if (err === 404) {
 					return res.sendStatus(404);
