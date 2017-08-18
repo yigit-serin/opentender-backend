@@ -71,46 +71,59 @@ app.get('/api/test.json', (req, res) => {
 	res.send({ok: 'yes'});
 });
 
+let processAnswer = (req, res, err, data) => {
+	if (err) {
+		console.log(err);
+		if (err === 404) {
+			return res.sendStatus(404);
+		}
+		return res.sendStatus(500);
+	}
+	sendAndAddToCache(req, res, {data: data});
+};
+
 app.get('/api/portals/list', (req, res) => {
-	res.send({data: portals});
+	processAnswer(req, res, null, portals);
 });
+
+let processPortalsStats = (data) => {
+	if (!data) {
+		return null;
+	}
+	let count_all = 0;
+	portals.forEach((p) => {
+		if (p.id !== 'eu') {
+			count_all += data[p.id] || 0;
+		}
+	});
+	data['eu'] = count_all;
+	let list = portals.map(p => {
+		return {
+			id: p.id,
+			name: p.name,
+			value: data[p.id] || 0
+		};
+	});
+	list.sort((a, b) => {
+		if (a.id === 'eu') {
+			return -1;
+		}
+		if (a.name < b.name) {
+			return -1;
+		}
+		if (a.name > b.name) {
+			return 1;
+		}
+		return 0;
+	});
+	return list;
+};
 
 app.get('/api/portals/stats', checkCache, (req, res) => {
 	api.getCountriesStats((err, data) => {
-		if (err) {
-			console.log(err);
-			return res.sendStatus(500);
-		}
-		let count_all = 0;
-		portals.forEach((p) => {
-			if (p.id !== 'eu') {
-				count_all += data[p.id] || 0;
-			}
-		});
-		data['eu'] = count_all;
-		let list = portals.map(p => {
-			return {
-				id: p.id,
-				name: p.name,
-				value: data[p.id] || 0
-			};
-		});
-		list.sort((a, b) => {
-			if (a.id === 'eu') {
-				return -1;
-			}
-			if (a.name < b.name) {
-				return -1;
-			}
-			if (a.name > b.name) {
-				return 1;
-			}
-			return 0;
-		});
-		sendAndAddToCache(req, res, {data: list});
+		processAnswer(req, res, err, processPortalsStats(data));
 	});
 });
-
 
 let registerCountryApi = country => {
 	let api_path = '/api/' + (country.id || 'eu') + '/';
@@ -118,303 +131,151 @@ let registerCountryApi = country => {
 
 	app.post(api_path + 'tender/search', checkCache, (req, res) => {
 		api.searchTender(req.body, country_id, (err, data) => {
-			if (err) {
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'company/search', checkCache, (req, res) => {
 		api.searchCompany(req.body, country_id, (err, data) => {
-			if (err) {
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'company/nuts', checkCache, (req, res) => {
 		api.getCompanyNutsStats(country_id, (err, data) => {
-			if (err) {
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'authority/search', checkCache, (req, res) => {
 		api.searchAuthority(req.body, country_id, (err, data) => {
-			if (err) {
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'authority/nuts', checkCache, (req, res) => {
 		api.getAuthorityNutsStats(country_id, (err, data) => {
-			if (err) {
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'sector/list/main', checkCache, (req, res) => {
 		api.getCPVUsageStats(country_id, (err, data) => {
-			if (err) {
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'autocomplete', checkCache, (req, res) => {
 		api.autocomplete(req.body.entity, req.body.field, req.body.search, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'market/stats', checkCache, (req, res) => {
 		api.getMarketAnalysisStats(req.body, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'home/stats', checkCache, (req, res) => {
 		api.getHomeStats(country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'sector/id/:id', checkCache, (req, res) => {
 		api.getCPV({id: req.params, lang: req.query.lang}, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'sector/stats', checkCache, (req, res) => {
 		api.getSectorStats(req.body, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'region/stats', checkCache, (req, res) => {
 		api.getRegionStats(req.body, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'tender/id/:id', checkCache, (req, res) => {
 		api.getTender(req.params.id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'company/id/:id', checkCache, (req, res) => {
 		api.getCompany(req.params.id, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'company/stats', checkCache, (req, res) => {
 		api.getCompanyStats(req.body, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'company/nuts', checkCache, (req, res) => {
 		api.getCompanyNutsStats(country_id, (err, data) => {
-			if (err) {
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'indicators/stats', checkCache, (req, res) => {
 		api.getIndicatorStats(req.body, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'company/similar/:id', checkCache, (req, res) => {
 		api.searchSimilarCompany(req.params.id, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'authority/id/:id', checkCache, (req, res) => {
 		api.getAuthority(req.params.id, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.post(api_path + 'authority/stats', checkCache, (req, res) => {
 		api.getAuthorityStats(req.body, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'authority/id/:id', checkCache, (req, res) => {
 		api.searchSimilarAuthority(req.params.id, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'quality/usage', checkCache, (req, res) => {
 		api.getFieldsUsage(country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'location/map.geo.json', checkCache, (req, res) => {
 		api.getLocationsMap((err, data) => {
-			if (err) {
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
-
 	});
 
 	app.get(api_path + 'company/similar/:id', checkCache, (req, res) => {
 		api.searchSimilarCompany(req.params.id, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
 	app.get(api_path + 'authority/similar/:id', checkCache, (req, res) => {
 		api.searchSimilarAuthority(req.params.id, country_id, (err, data) => {
-			if (err) {
-				if (err === 404) {
-					return res.sendStatus(404);
-				}
-				console.log(err);
-				return res.sendStatus(500);
-			}
-			sendAndAddToCache(req, res, {data: data});
+			processAnswer(req, res, err, data);
 		});
 	});
 
