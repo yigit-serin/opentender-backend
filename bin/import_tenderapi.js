@@ -176,9 +176,9 @@ let importTenderPackageFiles = cb => {
 
 let openDB = (cb) => {
 	async.waterfall([
-		importerAuthority.open,
-		importerCompany.open,
-		importerTender.open
+		(next) => importerAuthority.open(next),
+		(next) => importerCompany.open(next),
+		(next) => importerTender.open(next)
 	], (err) => {
 		cb(err);
 	});
@@ -189,13 +189,12 @@ let closeDB = () => {
 	importerCompany.stop();
 	importerTender.stop();
 	async.waterfall([
-		importerAuthority.close,
-		importerCompany.close,
-		importerTender.close,
-		store.close
-	], err => {
-		if (err) return console.log(err);
-		console.log('done.');
+		(next) => importerAuthority.close(next),
+		(next) => importerCompany.close(next),
+		(next) => importerTender.close(next),
+		(next) => store.close(next)
+	], (err) => {
+		console.log(err ? err : 'done.');
 	});
 };
 
