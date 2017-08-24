@@ -184,7 +184,7 @@ let registerCountryApi = country => {
 	});
 
 	app.get(api_path + 'sector/id/:id', checkCache, (req, res) => {
-		api.getCPV({id: req.params, lang: req.query.lang}, (err, data) => {
+		api.getCPV({id: req.params.id, lang: req.query.lang}, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
 	});
@@ -202,7 +202,7 @@ let registerCountryApi = country => {
 	});
 
 	app.get(api_path + 'tender/id/:id', checkCache, (req, res) => {
-		api.getTender(req.params.id, (err, data) => {
+		api.getTender({id: req.params.id, lang: req.query.lang}, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
 	});
