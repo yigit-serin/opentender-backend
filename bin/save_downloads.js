@@ -27,7 +27,7 @@ let status_portals = status.addItem('portals');
 
 let downloadsFolder = path.join(config.data.shared, 'downloads');
 
-let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString()).active;
+let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString());
 
 let store = new Store(config);
 
