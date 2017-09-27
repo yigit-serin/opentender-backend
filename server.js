@@ -9,6 +9,7 @@ const helmet = require('helmet');
 
 const Api = require('./lib/api.js');
 const config = require('./config.js');
+const crypto = require('crypto');
 
 let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString());
 let useCache = !config.disableCache;
@@ -125,6 +126,15 @@ app.get('/api/portals/stats', checkCache, (req, res) => {
 	});
 });
 
+let downloads = {};
+
+let requestDownload = (body) => {
+	const sbody = JSON.stringify(body);
+	const id = crypto.createHash('md5').update(sbody).digest('hex');
+	downloads[id] = sbody;
+	return id;
+};
+
 let registerCountryApi = country => {
 	let api_path = '/api/' + (country.id || 'eu') + '/';
 	let country_id = (country.id && (country.id !== 'eu') ? country.id.toUpperCase() : null);
@@ -133,6 +143,20 @@ let registerCountryApi = country => {
 		api.searchTender(req.body, country_id, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
+	});
+
+	app.get(api_path + 'download/id/:id', (req, res) => {
+		let sbody = downloads[req.params.id];
+		if (!sbody) {
+			return res.send(404);
+		}
+		let body = JSON.parse(sbody);
+		downloads[req.params.id] = undefined;
+		api.streamTender(req.params.id, req, res, body, country_id);
+	});
+
+	app.post(api_path + 'tender/download', (req, res) => {
+		res.send({data: {id: requestDownload(req.body)}});
 	});
 
 	app.post(api_path + 'company/search', checkCache, (req, res) => {

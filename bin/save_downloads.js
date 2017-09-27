@@ -27,50 +27,101 @@ let status_portals = status.addItem('portals');
 
 let downloadsFolder = path.join(config.data.shared, 'downloads');
 
-let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString());
+let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString()).reverse();
 
 let store = new Store(config);
 
 let results = [];
 
+let compressStream = (stream) => {
+	let compress = zlib.createGzip();
+	compress.pipe(stream);
+	return compress;
+};
+
+let streamItems = (country_id, onItems, onEnd) => {
+	let query = {match_all: {}};
+	if (country_id.toUpperCase() !== 'EU') {
+		query = {term: {country: country_id.toUpperCase()}};
+	}
+	let pos = 0;
+	store.Tender.streamQuery(1000, query,
+		(items, total) => {
+			pos += items.length;
+			if (!onItems(items, pos, total)) {
+				return false;
+			}
+			status_items.count = pos;
+			status_items.max = total;
+			return true;
+		},
+		(err) => {
+			onEnd(err, pos);
+		});
+};
+
+let downloadFolderFileStream = (filename) => {
+	let fullFilename = path.join(downloadsFolder, filename);
+	let outputStream = fs.createWriteStream(fullFilename);
+	return outputStream;
+};
+
 let dump = (country, cb) => {
 	currentCountry = country.name;
 	let countryId = (country.id ? country.id.toLowerCase() : 'eu');
-	let filename = 'data-' + countryId + '.ndjson.gz';
-	let fullFilename = path.join(downloadsFolder, filename);
-	let outputStream = fs.createWriteStream(fullFilename);
-	let compress = zlib.createGzip();
-	let totalItems = 0;
-	compress.pipe(outputStream);
-	let serialize = ndjson.serialize();
-	serialize.on('data', line => {
-		compress.write(line);
+	let filename = 'data-' + countryId;
+
+	let file_ndjson = {filename: filename + '.ndjson.gz', size: 0};
+	let file_ndjson_stream = downloadFolderFileStream(file_ndjson.filename);
+	let file_ndjson_compress = compressStream(file_ndjson_stream);
+	let file_ndjson_serialize = ndjson.serialize();
+	file_ndjson_serialize.on('data', line => {
+		file_ndjson_compress.write(line);
 	});
-	outputStream.on('close', () => {
+
+	let file_json = {filename: filename + '.json.gz', size: 0};
+	let file_json_stream = downloadFolderFileStream(file_json.filename);
+	let file_json_compress = compressStream(file_json_stream);
+	file_json_compress.write('[');
+
+	let totalItems = 0;
+
+	file_ndjson_stream.on('close', () => {
 		setTimeout(() => {
-			let result = {filename: filename, size: fs.statSync(fullFilename).size, country: countryId, count: totalItems};
+			file_json.size = fs.statSync(path.join(downloadsFolder, file_json.filename)).size;
+			file_ndjson.size = fs.statSync(path.join(downloadsFolder, file_ndjson.filename)).size;
+			let result = {country: countryId, count: totalItems, formats: {json: file_json, ndjson: file_ndjson}};
 			console.log(JSON.stringify(result));
 			results.push(result);
 			cb();
 		}, 1000);
 	});
-	let query = {match_all: {}};
-	if (country.id.toUpperCase() !== 'EU') {
-		query = {term: {country: country.id.toUpperCase()}};
-	}
-	store.Tender.streamQuery(query,
-		(item, pos, total) => {
-			serialize.write(item._source);
+
+	streamItems(countryId,
+		(items, pos, total) => {
+			if (totalItems === 0) {
+				file_json_compress.write(',');
+			}
+			items.forEach(item => {
+				file_ndjson_serialize.write(item._source);
+			});
+			file_json_compress.write(items.map(item => {
+				return JSON.stringify(item._source);
+			}).join(','));
 			status_items.count = pos;
 			status_items.max = total;
 			totalItems = total;
-		},
-		(err) => {
+			return true;
+		}, (err, total) => {
+			totalItems = total;
 			if (err) {
 				console.log('error streaming tenders', err);
+			} else {
+				file_json_compress.write('[');
 			}
-			serialize.end();
-			compress.end();
+			file_json_compress.end();
+			file_ndjson_serialize.end();
+			file_ndjson_compress.end();
 		});
 };
 
