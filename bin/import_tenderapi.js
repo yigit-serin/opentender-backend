@@ -19,7 +19,7 @@ const lzma = require('lzma-native');
 const Ajv = require('ajv');
 const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
 const status = require('node-status');
-const yaml = require('js-yaml');
+// const yaml = require('js-yaml');
 
 const console = status.console();
 
@@ -35,8 +35,6 @@ const showProgress = true;
 
 let store = new Store(config);
 let importerTender = new Importer(store, store.Tender, false, showProgress);
-let importerCompany = new Importer(store, store.Company, true, showProgress);
-let importerAuthority = new Importer(store, store.Authority, true, showProgress);
 let total = 0;
 let count = 0;
 let lasttimestamp = null;
@@ -61,71 +59,17 @@ let importTenderPackage = (array, filename, cb) => {
 	count += array.length;
 	importerTender.setCount(count);
 
-	// collect companies & authorities
-	let companies = [];
-	let authorities = [];
 	array.forEach(item => {
-
 		lasttimestamp = item.modified;
 		stats[item.country] = (stats[item.country] || 0) + 1;
-		// collect buyers for additional separate storing
-		if (item.buyers) {
-			item.buyers.forEach((buyer) => {
-				authorities.push({
-					body: buyer,
-					country: item.country,
-					source: {
-						tender: item.id,
-						buyer: buyer.id
-					}
-				});
-			});
-		}
-
-		// collect bidders for additional separate storing
-		if (item.lots) {
-			item.lots.forEach((lot) => {
-				if (lot.bids) {
-					lot.bids.forEach((bid) => {
-						if (bid.bidders) {
-							bid.bidders.forEach((bidder) => {
-								companies.push({
-									body: bidder,
-									country: item.country,
-									source: {
-										tender: item.id,
-										lot: lot.id,
-										bid: bid.id,
-										bidder: bidder.id
-									}
-								});
-							});
-						}
-					});
-				}
-			});
-		}
 	});
 
-	// import everything to DB
-	importerCompany.bulk(companies, (err) => {
+	importerTender.bulk(array, (err) => {
 		if (err) {
 			console.error(err);
 			return cb(err);
 		}
-		importerAuthority.bulk(authorities, (err) => {
-			if (err) {
-				console.error(err);
-				return cb(err);
-			}
-			importerTender.bulk(array, (err) => {
-				if (err) {
-					console.error(err);
-					return cb(err);
-				}
-				cb();
-			});
-		});
+		cb();
 	});
 };
 
@@ -176,8 +120,6 @@ let importTenderPackageFiles = cb => {
 
 let openDB = (cb) => {
 	async.waterfall([
-		(next) => importerAuthority.open(next),
-		(next) => importerCompany.open(next),
 		(next) => importerTender.open(next)
 	], (err) => {
 		cb(err);
@@ -185,12 +127,8 @@ let openDB = (cb) => {
 };
 
 let closeDB = () => {
-	importerAuthority.stop();
-	importerCompany.stop();
 	importerTender.stop();
 	async.waterfall([
-		(next) => importerAuthority.close(next),
-		(next) => importerCompany.close(next),
 		(next) => importerTender.close(next),
 		(next) => store.close(next)
 	], (err) => {

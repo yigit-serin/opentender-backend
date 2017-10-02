@@ -72,7 +72,7 @@ app.get('/api/test.json', (req, res) => {
 	res.send({ok: 'yes'});
 });
 
-let processAnswer = (req, res, err, data) => {
+let processAnswer = (req, res, err, data, nocache) => {
 	if (err) {
 		console.log(err);
 		if (err === 404) {
@@ -80,7 +80,11 @@ let processAnswer = (req, res, err, data) => {
 		}
 		return res.sendStatus(500);
 	}
-	sendAndAddToCache(req, res, {data: data});
+	if (nocache) {
+		res.send({data: data});
+	} else {
+		sendAndAddToCache(req, res, {data: data});
+	}
 };
 
 app.get('/api/portals/list', (req, res) => {
@@ -156,11 +160,11 @@ let registerCountryApi = country => {
 	});
 
 	app.post(api_path + 'tender/download', (req, res) => {
-		res.send({data: {id: requestDownload(req.body)}});
+		processAnswer(req, res, null, {id: requestDownload(req.body)}, true);
 	});
 
 	app.post(api_path + 'company/search', checkCache, (req, res) => {
-		api.searchCompany(req.body, country_id, (err, data) => {
+		api.searchSupplier(req.body, country_id, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
 	});
@@ -172,7 +176,7 @@ let registerCountryApi = country => {
 	});
 
 	app.post(api_path + 'authority/search', checkCache, (req, res) => {
-		api.searchAuthority(req.body, country_id, (err, data) => {
+		api.searchBuyer(req.body, country_id, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
 	});
@@ -189,9 +193,9 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.post(api_path + 'autocomplete', checkCache, (req, res) => {
+	app.post(api_path + 'autocomplete', (req, res) => {
 		api.autocomplete(req.body.entity, req.body.field, req.body.search, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
+			processAnswer(req, res, err, data, true);
 		});
 	});
 

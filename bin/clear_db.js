@@ -17,6 +17,8 @@ store.init((err) => {
 	}
 	async.waterfall([
 		store.Tender.removeIndex,
+		store.Supplier.removeIndex,
+		store.Buyer.removeIndex,
 		store.Authority.removeIndex,
 		store.Company.removeIndex,
 		store.PublicBody.removeIndex

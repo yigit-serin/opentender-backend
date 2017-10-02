@@ -45,7 +45,7 @@ let streamItems = (country_id, onItems, onEnd) => {
 		query = {term: {country: country_id.toUpperCase()}};
 	}
 	let pos = 0;
-	store.Tender.streamQuery(1000, query,
+	store.Tender.streamQuery(100, query,
 		(items, total) => {
 			pos += items.length;
 			if (!onItems(items, pos, total)) {
