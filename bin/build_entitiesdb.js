@@ -14,9 +14,9 @@ let status_tenders = status.addItem('tenders', {type: ['bar']});
 let streamItems = (onItems, onEnd) => {
 	let query = {match_all: {}};
 	let pos = 0;
-	store.Tender.stream(200, query,
+	store.Tender.stream(1000, query,
 		(items, total, next) => {
-		pos += items.length;
+			pos += items.length;
 			onItems(items, pos, total, next);
 		},
 		(err) => {
@@ -141,9 +141,13 @@ let importEntities = (cb) => {
 		status_tenders.max = total;
 		status_tenders.count = pos;
 		importBuyers(items, (err) => {
-			if (err) return cb(err);
+			if (err) {
+				return cb(err);
+			}
 			importSuppliers(items, (err) => {
-				if (err) return cb(err);
+				if (err) {
+					return cb(err);
+				}
 				next();
 			});
 		});
