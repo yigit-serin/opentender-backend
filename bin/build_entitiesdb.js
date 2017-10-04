@@ -35,6 +35,7 @@ function importBuyers(items, cb) {
 			return;
 		}
 		(hit._source.buyers || []).forEach(body => {
+			body.groupId = body.groupId || 'no-id';
 			let buyer = buyers.find(b => {
 				return b.body.groupId === body.groupId;
 			});
@@ -46,7 +47,8 @@ function importBuyers(items, cb) {
 				};
 				buyers.push(buyer);
 			}
-			buyer.sources.push({tender: hit._source.id, country: hit._source.country, body: body});
+			// TODO: add other usefull informations
+			buyer.sources.push({tender: hit._source.id, country: hit._source.country});
 		});
 	});
 	let ids = buyers.map(buyer => {
@@ -91,6 +93,7 @@ function importSuppliers(items, cb) {
 		(hit._source.lots || []).forEach(lot => {
 			(lot.bids || []).forEach(bid => {
 				(bid.bidders || []).forEach(body => {
+					body.groupId = body.groupId || 'no-id';
 					let supplier = suppliers.find(b => {
 						return b.body.groupId === body.groupId;
 					});
@@ -102,7 +105,7 @@ function importSuppliers(items, cb) {
 						};
 						suppliers.push(supplier);
 					}
-					supplier.sources.push({tender: hit._source.id, country: hit._source.country, body: body});
+					supplier.sources.push({tender: hit._source.id, country: hit._source.country});
 				});
 			});
 		});
