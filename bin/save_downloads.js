@@ -94,12 +94,12 @@ let dump = (country, cb) => {
 			console.log(JSON.stringify(result));
 			results.push(result);
 			cb();
-		}, 1000);
+		}, 100);
 	});
 
 	streamItems(countryId,
 		(items, pos, total) => {
-			if (totalItems === 0) {
+			if (totalItems !== 0) {
 				file_json_compress.write(',');
 			}
 			items.forEach(item => {
@@ -117,7 +117,7 @@ let dump = (country, cb) => {
 			if (err) {
 				console.log('error streaming tenders', err);
 			} else {
-				file_json_compress.write('[');
+				file_json_compress.write(']');
 			}
 			file_json_compress.end();
 			file_ndjson_serialize.end();
