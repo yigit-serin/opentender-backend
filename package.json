@@ -1,6 +1,6 @@
 {
   "name": "opentender-portal-backend",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Opentender Portal Backend Server",
   "author": "okfde",
   "license": "MIT",
@@ -19,22 +19,22 @@
     "async": "2.5.0",
     "body-parser": "1.18.2",
     "csv-stream": "0.1.3",
-    "debug": "3.0.1",
+    "debug": "^3.1.0",
     "elasticsearch": "13.3.1",
-    "express": "4.15.5",
-    "helmet": "3.8.1",
+    "express": "^4.16.2",
+    "helmet": "^3.8.2",
     "js-yaml": "3.10.0",
     "lzma-native": "3.0.1",
     "memory-cache": "0.2.0",
     "mkdirp": "0.5.1",
-    "moment": "2.18.1",
+    "moment": "^2.19.0",
     "ndjson": "1.5.0",
     "node-status": "1.0.0",
-    "request": "2.82.0",
-    "scrapyard": "^0.1.0"
+    "request": "^2.83.0",
+    "scrapyard": "^0.1.1"
   },
   "devDependencies": {
-    "eslint": "4.7.2",
-    "nodemon": "1.12.0"
+    "eslint": "4.8.0",
+    "nodemon": "1.12.1"
   }
 }
