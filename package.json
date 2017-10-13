@@ -12,6 +12,7 @@
     "server": "node server.js",
     "develop": "nodemon server.js",
     "import": "cd bin && node import_tenderapi.js",
+    "entities": "cd bin && node build_entitiesdb.js",
     "downloads": "cd bin && node save_downloads.js"
   },
   "dependencies": {

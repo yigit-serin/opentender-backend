@@ -49,6 +49,10 @@ let settings = {
 
 `npm run import` to import the tender api data into the DB
 
+### Build Entities
+
+`npm run entities` to (re-)build the Database Tables for Companies & Authorities by the current Tender data
+
 ### Stopwords
 
 `npm run stopwords` to create a joined stopword list file for the DB
