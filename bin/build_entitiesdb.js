@@ -35,13 +35,13 @@ function importBuyers(items, cb) {
 			return;
 		}
 		(hit._source.buyers || []).forEach(body => {
-			body.groupId = body.groupId || 'no-id';
+			body.id = body.id || 'no-id';
 			let buyer = buyers.find(b => {
-				return b.body.groupId === body.groupId;
+				return b.body.id === body.id;
 			});
 			if (!buyer) {
 				buyer = {
-					id: body.groupId,
+					id: body.id,
 					body: body,
 					sources: []
 				};
@@ -52,7 +52,7 @@ function importBuyers(items, cb) {
 		});
 	});
 	let ids = buyers.map(buyer => {
-		return buyer.body.groupId;
+		return buyer.body.id;
 	});
 	store.Buyer.getByIds(ids, (err, result) => {
 		if (err) return cb(err);
@@ -60,7 +60,7 @@ function importBuyers(items, cb) {
 		let update_hits = [];
 		buyers.forEach(buyer => {
 			let hit = result.hits.hits.find(h => {
-				return buyer.body.groupId === h._source.body.groupId;
+				return buyer.body.id === h._source.body.id;
 			});
 			if (hit) {
 				hit._source.sources = hit._source.sources.concat(buyer.sources);
@@ -93,13 +93,13 @@ function importSuppliers(items, cb) {
 		(hit._source.lots || []).forEach(lot => {
 			(lot.bids || []).forEach(bid => {
 				(bid.bidders || []).forEach(body => {
-					body.groupId = body.groupId || 'no-id';
+					body.id = body.id || 'no-id';
 					let supplier = suppliers.find(b => {
-						return b.body.groupId === body.groupId;
+						return b.body.id === body.id;
 					});
 					if (!supplier) {
 						supplier = {
-							id: body.groupId,
+							id: body.id,
 							body: body,
 							sources: []
 						};
@@ -111,7 +111,7 @@ function importSuppliers(items, cb) {
 		});
 	});
 	let ids = suppliers.map(supplier => {
-		return supplier.body.groupId;
+		return supplier.body.id;
 	});
 	store.Supplier.getByIds(ids, (err, result) => {
 		if (err) return cb(err);
@@ -119,7 +119,7 @@ function importSuppliers(items, cb) {
 		let update_hits = [];
 		suppliers.forEach(supplier => {
 			let hit = result.hits.hits.find(h => {
-				return supplier.body.groupId === h._source.body.groupId;
+				return supplier.body.id === h._source.body.id;
 			});
 			if (hit) {
 				hit._source.sources = hit._source.sources.concat(supplier.sources);

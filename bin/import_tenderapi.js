@@ -43,7 +43,7 @@ let stats = {};
 let importTenderPackage = (array, filename, cb) => {
 
 	// remove unused variables
-	convert.cleanTenderApiDocs(array);
+	array = convert.cleanTenderApiDocs(array);
 
 	// validate
 	let valid = validate(array);

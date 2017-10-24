@@ -16,12 +16,10 @@ store.init((err) => {
 		return console.log(err);
 	}
 	async.waterfall([
-		store.Tender.removeIndex,
-		store.Supplier.removeIndex,
-		store.Buyer.removeIndex,
-		store.Authority.removeIndex,
-		store.Company.removeIndex,
-		store.PublicBody.removeIndex
+		(next) => store.Tender.removeIndex(next),
+		(next) => store.Supplier.removeIndex(next),
+		(next) => store.Buyer.removeIndex(next),
+		(next) => store.PublicBody.removeIndex(next)
 	], (err) => {
 		if (err) return console.log(err);
 		console.log('done.');
