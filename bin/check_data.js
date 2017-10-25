@@ -7,21 +7,24 @@
 */
 
 const lzma = require('lzma-native');
+const Ajv = require('ajv');
 const fs = require('fs');
 const async = require('async');
 const path = require('path');
 const config = require('../config.js');
-const convert = require('../lib/convert.js');
-const Ajv = require('ajv');
-const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
+const Library = require('../lib/library.js');
+const Converter = require('../lib/convert.js');
 
 const data_path = config.data.tenderapi + '/import/';
+const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
 const schema = JSON.parse(fs.readFileSync(config.data.shared + '/schema.json').toString());
 const validate = ajv.compile(schema);
 const stats = {
 	count: 0,
 	countries: {}
 };
+const library = new Library(config);
+const converter = new Converter(stats, library);
 
 const check = (filename, cb) => {
 	console.log('checking', filename);
@@ -32,7 +35,7 @@ const check = (filename, cb) => {
 			array.forEach(tender => {
 				stats.countries[tender.country] = (stats.countries[tender.country] || 0) + 1;
 			});
-			array = convert.cleanTenderApiDocs(array, stats);
+			array = converter.transform(array);
 			if (!validate(array)) {
 				console.log(validate.errors);
 			}

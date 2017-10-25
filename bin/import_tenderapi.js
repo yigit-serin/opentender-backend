@@ -25,7 +25,8 @@ const console = status.console();
 
 const Store = require('../lib/store.js');
 const Importer = require('../lib/importer.js');
-const convert = require('../lib/convert.js');
+const Library = require('../lib/library.js');
+const Converter = require('../lib/convert.js');
 const config = require('../config.js');
 
 const schema = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'schema.json')).toString());
@@ -33,8 +34,10 @@ const validate = ajv.compile(schema);
 const data_path = config.data.tenderapi;
 const showProgress = true;
 
-let store = new Store(config);
-let importerTender = new Importer(store, store.Tender, false, showProgress);
+const store = new Store(config);
+const library = new Library(config);
+const converter = new Converter(null, library);
+const importerTender = new Importer(store, store.Tender, false, showProgress);
 let total = 0;
 let count = 0;
 let lasttimestamp = null;
@@ -42,8 +45,8 @@ let stats = {};
 
 let importTenderPackage = (array, filename, cb) => {
 
-	// remove unused variables
-	array = convert.cleanTenderApiDocs(array);
+	// remove unused variables & clean some data
+	array = converter.transform(array);
 
 	// validate
 	let valid = validate(array);
