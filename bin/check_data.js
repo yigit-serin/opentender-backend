@@ -16,9 +16,16 @@ const Library = require('../lib/library.js');
 const Converter = require('../lib/convert.js');
 
 const data_path = config.data.tenderapi + '/import/';
-const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
-const schema = JSON.parse(fs.readFileSync(config.data.shared + '/schema.json').toString());
-const validate = ajv.compile(schema);
+
+const validator = (filename) => {
+	const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
+	const schema = JSON.parse(fs.readFileSync(path.resolve(config.data.shared, filename)).toString());
+	return ajv.compile(schema);
+};
+
+const validateOpentender = validator('schema.json');
+const validateTenderAPI = validator('tenderapi.json');
+
 const stats = {
 	count: 0,
 	countries: {}
@@ -32,12 +39,17 @@ const check = (filename, cb) => {
 		lzma.decompress(content, (decompressedResult) => {
 			let array = JSON.parse(decompressedResult.toString());
 			stats.count = stats.count + array.length;
+			if (!validateTenderAPI(array)) {
+				console.log(validateTenderAPI.errors);
+				return;
+			}
 			array.forEach(tender => {
 				stats.countries[tender.country] = (stats.countries[tender.country] || 0) + 1;
 			});
 			array = converter.transform(array);
-			if (!validate(array)) {
-				console.log(validate.errors);
+			if (!validateOpentender(array)) {
+				console.log(validateOpentender.errors);
+				return;
 			}
 			cb();
 		});

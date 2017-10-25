@@ -17,7 +17,6 @@ const fs = require('fs');
 const async = require('async');
 const lzma = require('lzma-native');
 const Ajv = require('ajv');
-const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
 const status = require('node-status');
 // const yaml = require('js-yaml');
 
@@ -29,8 +28,15 @@ const Library = require('../lib/library.js');
 const Converter = require('../lib/convert.js');
 const config = require('../config.js');
 
-const schema = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'schema.json')).toString());
-const validate = ajv.compile(schema);
+const validator = (filename) => {
+	const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
+	const schema = JSON.parse(fs.readFileSync(path.resolve(config.data.shared, filename)).toString());
+	return ajv.compile(schema);
+};
+
+const validateOpentender = validator('schema.json');
+const validateTenderAPI = validator('tenderapi.json');
+
 const data_path = config.data.tenderapi;
 const showProgress = true;
 
@@ -44,15 +50,21 @@ let lasttimestamp = null;
 let stats = {};
 
 let importTenderPackage = (array, filename, cb) => {
+	// validate opentender
+	let valid = validateTenderAPI(array);
+	if (!valid) {
+		console.log('tenderapi schema error in filename', filename);
+		console.log(validateTenderAPI.errors);
+	}
 
 	// remove unused variables & clean some data
 	array = converter.transform(array);
 
-	// validate
-	let valid = validate(array);
+	// validate opentender
+	valid = validateOpentender(array);
 	if (!valid) {
-		console.log('schema error in filename', filename);
-		console.log(validate.errors);
+		console.log('opentender schema error in filename', filename);
+		console.log(validateOpentender.errors);
 	}
 
 	// update status ui
