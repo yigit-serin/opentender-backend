@@ -50,7 +50,7 @@ let lasttimestamp = null;
 let stats = {};
 
 let importTenderPackage = (array, filename, cb) => {
-	// validate opentender
+	// validate tenderapi
 	let valid = validateTenderAPI(array);
 	if (!valid) {
 		console.log('tenderapi schema error in filename', filename);
