@@ -130,6 +130,24 @@ app.get('/api/portals/stats', checkCache, (req, res) => {
 	});
 });
 
+app.get('/api/portals/usage', checkCache, (req, res) => {
+	api.getCountriesStats((err, countries) => {
+		if (countries) {
+			let unused = {};
+			let used = {};
+			Object.keys(countries).forEach(key => {
+				let portal = portals.find(p => p.id === key);
+				if (!portal) {
+					unused[key] = countries[key];
+				} else {
+					used[key] = countries[key];
+				}
+			});
+			processAnswer(req, res, err, {used, unused});
+		}
+	});
+});
+
 let downloads = {};
 
 let requestDownload = (body) => {
@@ -331,20 +349,5 @@ api.init(err => {
 	}
 	const listener = app.listen(config.listen.port, config.listen.host, () => {
 		console.log('Opentender Api is listening on: http://%s:%d (%s)', listener.address().address, listener.address().port, app.settings.env);
-		api.getCountriesStats((err, countries) => {
-			if (countries) {
-				let unused = {};
-				Object.keys(countries).forEach(key => {
-					let portal = portals.find(p => p.id === key);
-					if (!portal) {
-						unused[key] = countries[key];
-					}
-				});
-				if (Object.keys(unused).length > 0) {
-					console.log('Unused Portal Data available with not supported/invalid country codes:');
-					console.log(JSON.stringify(unused));
-				}
-			}
-		});
 	});
 });
