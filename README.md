@@ -31,8 +31,10 @@ let settings = {
 		path: '/var/www/opentender/data/backend',
 		tenderapi: '/var/www/opentender/data/tenderapi'
 	},
-	disableCache: false // json is cached, disable here for debugging purposes
-};
+	cache: {
+		type: 'internal', // disabled | internal | memcached
+		memcached: ['127.0.0.1:11211'] // if type == memcached, server address(es)
+	}};
 ```
 
 ## Commands

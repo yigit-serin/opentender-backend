@@ -3,19 +3,20 @@
 const fs = require('fs');
 const express = require('express');
 const path = require('path');
-const cache = require('memory-cache');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 
 const Api = require('./lib/api.js');
+const Cache = require('./lib/cache.js');
 const config = require('./config.js');
 const crypto = require('crypto');
 
 let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString());
-let useCache = !config.disableCache;
 
 let api = new Api(config);
 let app = express();
+
+let cache = Cache.initCache(config.cache);
 
 app.use(helmet());
 app.all('*', (req, res, next) => {
@@ -32,16 +33,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 let addToCache = (req, data) => {
-	if (!useCache) {
-		return;
-	}
 	let url = req.url + '|' + JSON.stringify(req.body) + JSON.stringify(req.params);
-	// console.log('add to cache', url);
-	let c = cache.get(url);
-	if (!c) {
-		let maximum_waittime = 2147483647; // TODO: switch to external memcached
-		cache.put(url, {url: url, data: data}, maximum_waittime);
-	}
+	cache.upsert(url, data, (err, stored) => {
+		if (err) {
+			return console.error(error);
+		}
+		// if (stored) {
+		// 	console.log('cache: stored', url);
+		// }
+	});
 };
 
 let sendAndAddToCache = (req, res, data) => {
@@ -50,18 +50,19 @@ let sendAndAddToCache = (req, res, data) => {
 };
 
 let checkCache = (req, res, cb) => {
-	if (!useCache) {
-		return cb();
-	}
 	let url = req.url + '|' + JSON.stringify(req.body) + JSON.stringify(req.params);
-	let c = cache.get(url);
-	if (c) {
-		// console.log('request found in cache', url);
-		res.send(c.data);
-	} else {
-		// console.log('request NOT found in cache', url);
-		cb();
-	}
+	cache.get(url, (err, result) => {
+		if (err) {
+			console.error(err);
+			return cb();
+		}
+		if (!result) {
+			// console.log('cache: NOT found', url);
+			cb();
+		} else {
+			res.send(result);
+		}
+	});
 };
 
 app.get('/', (req, res) => {
