@@ -10,6 +10,7 @@ const Api = require('./lib/api.js');
 const Cache = require('./lib/cache.js');
 const config = require('./config.js');
 const crypto = require('crypto');
+const pck = require('./package.json');
 
 let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString());
 
@@ -66,11 +67,11 @@ let checkCache = (req, res, cb) => {
 };
 
 app.get('/', (req, res) => {
-	res.send('OpenTender Data Server');
+	res.send('OpenTender Data Server ' + pck.version);
 });
 
 app.get('/api/test.json', (req, res) => {
-	res.send({ok: 'yes'});
+	res.send({version: pck.version, ok: 'yes'});
 });
 
 let processAnswer = (req, res, err, data, nocache) => {
