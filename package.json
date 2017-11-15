@@ -30,6 +30,7 @@
     "memory-cache": "0.2.0",
     "mkdirp": "0.5.1",
     "moment": "^2.19.1",
+    "morgan": "^1.9.0",
     "ndjson": "1.5.0",
     "node-status": "1.0.0",
     "request": "^2.83.0",

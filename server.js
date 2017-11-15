@@ -5,6 +5,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
+const morgan = require('morgan');
 
 const Api = require('./lib/api.js');
 const Cache = require('./lib/cache.js');
@@ -33,15 +34,26 @@ app.all('*', (req, res, next) => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
+morgan.token('cached', (req) => {
+	return req.cached ? 'true' : 'false';
+});
+
+app.use(morgan('[:date[clf]] - cached: :cached - :method :url - :res[content-length] - :response-time ms'));
+
+let md5hash = (value) => {
+	return crypto.createHash('md5').update(value).digest('hex');
+};
+
+let getCacheKey = (req) => {
+	let key = JSON.stringify({u: req.originalUrl, b: req.body, p: req.params});
+	return md5hash(key);
+};
+
 let addToCache = (req, data) => {
-	let url = req.url + '|' + JSON.stringify(req.body) + JSON.stringify(req.params);
-	cache.upsert(url, data, (err, stored) => {
+	cache.upsert(getCacheKey(req), data, (err, stored) => {
 		if (err) {
 			return console.error(error);
 		}
-		// if (stored) {
-		// 	console.log('cache: stored', url);
-		// }
 	});
 };
 
@@ -51,16 +63,15 @@ let sendAndAddToCache = (req, res, data) => {
 };
 
 let checkCache = (req, res, cb) => {
-	let url = req.url + '|' + JSON.stringify(req.body) + JSON.stringify(req.params);
-	cache.get(url, (err, result) => {
+	cache.get(getCacheKey(req), (err, result) => {
 		if (err) {
 			console.error(err);
 			return cb();
 		}
 		if (!result) {
-			// console.log('cache: NOT found', url);
 			cb();
 		} else {
+			req.cached = true;
 			res.send(result);
 		}
 	});
@@ -154,7 +165,7 @@ let downloads = {};
 
 let requestDownload = (body) => {
 	const sbody = JSON.stringify(body);
-	const id = crypto.createHash('md5').update(sbody).digest('hex');
+	const id = md5hash(sbody);
 	downloads[id] = sbody;
 	return id;
 };
