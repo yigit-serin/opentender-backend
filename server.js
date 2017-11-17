@@ -14,6 +14,21 @@ const crypto = require('crypto');
 const pck = require('./package.json');
 
 let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString());
+let portals_geojson = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'countries.geo.json')).toString());
+
+portals_geojson.features = portals_geojson.features.filter(feature => {
+	let id = (feature.properties.wb_a2 || '').toLowerCase();
+	let p = portals.find(portal => {
+		return portal.id === id;
+	});
+	return p;
+}).map(feature => {
+	return {
+		type: feature.type,
+		geometry: feature.geometry,
+		properties: {id: feature.properties.wb_a2.toLowerCase()}
+	}
+});
 
 let api = new Api(config);
 let app = express();
@@ -101,7 +116,11 @@ let processAnswer = (req, res, err, data, nocache) => {
 };
 
 app.get('/api/portals/list', (req, res) => {
-	processAnswer(req, res, null, portals);
+	res.send({data: portals});
+});
+
+app.get('/api/portals/geo.json', (req, res) => {
+	res.send(portals_geojson);
 });
 
 let processPortalsStats = (data) => {
