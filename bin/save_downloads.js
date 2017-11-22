@@ -41,7 +41,7 @@ let compressStream = (stream) => {
 
 let streamItems = (country_id, onItems, onEnd) => {
 	let query = {match_all: {}};
-	if (country_id.toUpperCase() !== 'EU') {
+	if (country_id.toUpperCase() !== 'ALL') {
 		query = {term: {country: country_id.toUpperCase()}};
 	}
 	let pos = 0;
@@ -68,7 +68,7 @@ let downloadFolderFileStream = (filename) => {
 
 let dump = (country, cb) => {
 	currentCountry = country.name;
-	let countryId = (country.id ? country.id.toLowerCase() : 'eu');
+	let countryId = (country.id ? country.id.toLowerCase() : 'all');
 	let filename = 'data-' + countryId;
 
 	let file_ndjson = {filename: filename + '.ndjson.gz', size: 0};

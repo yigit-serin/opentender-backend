@@ -17,7 +17,7 @@ let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.
 let portals_geojson = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'countries.geo.json')).toString());
 
 portals_geojson.features = portals_geojson.features.filter(feature => {
-	let id = (feature.properties.wb_a2 || '').toLowerCase();
+	let id = (feature.properties.iso_a2 || '').toLowerCase();
 	let p = portals.find(portal => {
 		return portal.id === id;
 	});
@@ -26,7 +26,7 @@ portals_geojson.features = portals_geojson.features.filter(feature => {
 	return {
 		type: feature.type,
 		geometry: feature.geometry,
-		properties: {id: feature.properties.wb_a2.toLowerCase()}
+		properties: {id: feature.properties.iso_a2.toLowerCase()}
 	}
 });
 
@@ -129,11 +129,11 @@ let processPortalsStats = (data) => {
 	}
 	let count_all = 0;
 	portals.forEach((p) => {
-		if (p.id !== 'eu') {
+		if (p.id !== 'all') {
 			count_all += data[p.id] || 0;
 		}
 	});
-	data['eu'] = count_all;
+	data['all'] = count_all;
 	let list = portals.map(p => {
 		return {
 			id: p.id,
@@ -142,7 +142,7 @@ let processPortalsStats = (data) => {
 		};
 	});
 	list.sort((a, b) => {
-		if (a.id === 'eu') {
+		if (a.id === 'all') {
 			return -1;
 		}
 		if (a.name < b.name) {
@@ -190,8 +190,8 @@ let requestDownload = (body) => {
 };
 
 let registerCountryApi = country => {
-	let api_path = '/api/' + (country.id || 'eu') + '/';
-	let country_id = (country.id && (country.id !== 'eu') ? country.id.toUpperCase() : null);
+	let api_path = '/api/' + (country.id || 'all') + '/';
+	let country_id = (country.id && (country.id !== 'all') ? country.id.toUpperCase() : null);
 
 	app.post(api_path + 'tender/search', checkCache, (req, res) => {
 		api.searchTender(req.body, country_id, (err, data) => {
