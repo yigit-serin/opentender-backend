@@ -2,11 +2,11 @@
 
 Provides the Data for the Opentender Portal
 
-written in Javascript for NodeJS 6.x
+written in Javascript for NodeJS 8.x
 
 ## Installation
 
-- install [NodeJS](https://nodejs.org/) 6.x and [NPM](https://www.npmjs.com/)
+- install [NodeJS](https://nodejs.org/) 8.x and [NPM](https://www.npmjs.com/)
 - install [Elasticsearch](https://www.elastic.co/) 2.4.x
 
 - run command `npm install` in the root folder of this repository
