@@ -38,7 +38,7 @@ const stats = {
 	}
 };
 const library = new Library(config);
-const converter = new Converter(stats, library);
+const converter = new Converter(stats, library, config.data.path);
 
 const check = (filename, cb) => {
 	console.log('checking', filename);

@@ -42,7 +42,7 @@ const showProgress = true;
 
 const store = new Store(config);
 const library = new Library(config);
-const converter = new Converter(null, library);
+const converter = new Converter(null, library, config.data.path);
 const importerTender = new Importer(store, store.Tender, false, showProgress);
 let total = 0;
 let count = 0;
