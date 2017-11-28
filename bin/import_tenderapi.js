@@ -104,14 +104,19 @@ let importTenderPackageFile = (filename, cb) => {
 	});
 };
 
-let importTenderPackageFiles = cb => {
-	// read package next json & all declared package files from it
+let importTenderPackageFiles = (ignoreNext, cb) => {
 	let nextPackageFilename = path.join(data_path, 'package_next.json');
-	if (!fs.existsSync(nextPackageFilename)) {
-		console.log('No import data file found', nextPackageFilename);
-		return cb();
+	let package_next;
+	if (ignoreNext) {
+		package_next = {"timestamp": "2015-01-01T00:00:00.000"};
+	} else {
+		// read package next json & all declared package files from it
+		if (!fs.existsSync(nextPackageFilename)) {
+			console.log('No import data file found', nextPackageFilename);
+			return cb();
+		}
+		package_next = JSON.parse(fs.readFileSync(nextPackageFilename).toString());
 	}
-	let package_next = JSON.parse(fs.readFileSync(nextPackageFilename).toString());
 	let importpackagefilename = path.join(data_path, 'package_' + package_next.timestamp.replace(/[\/:\.]/g, '-') + '.json');
 	if (!fs.existsSync(importpackagefilename)) {
 		return cb('nothing to import: ' + importpackagefilename + ' does not exists');
@@ -156,7 +161,7 @@ openDB(err => {
 		console.log(err);
 		return closeDB();
 	}
-	importTenderPackageFiles(err => {
+	importTenderPackageFiles(true, err => {
 		if (err) {
 			console.log(err);
 			return closeDB();
