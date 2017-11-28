@@ -3,6 +3,7 @@
 const fs = require('fs');
 const express = require('express');
 const path = require('path');
+const async = require('async');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -180,14 +181,22 @@ app.get('/api/portals/usage', checkCache, (req, res) => {
 	});
 });
 
-let downloads = {};
 
-let requestDownload = (body) => {
-	const sbody = JSON.stringify(body);
-	const id = md5hash(sbody);
-	downloads[id] = sbody;
-	return id;
-};
+let downloads = {};
+let download_queue = async.queue((task, next) => {
+	if (task.request) {
+		const id = md5hash(JSON.stringify(task.req.body) + (new Date()).valueOf());
+		downloads[id] = task.req.body;
+		setTimeout(() => {
+			//expires after 60 seconds
+			delete downloads[id];
+		}, 60000);
+		processAnswer(task.req, task.res, null, {id: id}, true);
+		next();
+	} else {
+		api.streamTender(task.id, task.req, task.res, task.body, task.country_id, next);
+	}
+}, 6);
 
 let registerCountryApi = country => {
 	let api_path = '/api/' + (country.id || 'all') + '/';
@@ -200,17 +209,16 @@ let registerCountryApi = country => {
 	});
 
 	app.get(api_path + 'download/id/:id', (req, res) => {
-		let sbody = downloads[req.params.id];
-		if (!sbody) {
-			return res.send(404);
+		let body = downloads[req.params.id];
+		if (!body) {
+			return res.status(401).send('download token invalid/expired');
 		}
-		let body = JSON.parse(sbody);
-		downloads[req.params.id] = undefined;
-		api.streamTender(req.params.id, req, res, body, country_id);
+		delete downloads[req.params.id];
+		download_queue.push({id: req.params.id, req, res, body, country_id});
 	});
 
 	app.post(api_path + 'tender/download', (req, res) => {
-		processAnswer(req, res, null, {id: requestDownload(req.body)}, true);
+		download_queue.push({request: true, req, res, country_id});
 	});
 
 	app.post(api_path + 'company/search', checkCache, (req, res) => {
