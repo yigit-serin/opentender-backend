@@ -68,7 +68,7 @@ let getCacheKey = (req) => {
 let addToCache = (req, data) => {
 	cache.upsert(getCacheKey(req), data, (err, stored) => {
 		if (err) {
-			return console.error(error);
+			return console.error(err);
 		}
 	});
 };
