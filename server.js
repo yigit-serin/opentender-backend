@@ -293,6 +293,12 @@ let registerCountryApi = country => {
 		});
 	});
 
+	app.post(api_path + 'tender/stats', checkCache, (req, res) => {
+		api.getTenderStats(req.body, country_id, (err, data) => {
+			processAnswer(req, res, err, data);
+		});
+	});
+
 	app.get(api_path + 'company/id/:id', checkCache, (req, res) => {
 		api.getCompany(req.params.id, country_id, (err, data) => {
 			processAnswer(req, res, err, data);
