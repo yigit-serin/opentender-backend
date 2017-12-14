@@ -124,7 +124,7 @@ app.get('/api/portals/geo.json', (req, res) => {
 	res.send(portals_geojson);
 });
 
-let processPortalsStats = (data) => {
+let processPortalsStats = (data, lang) => {
 	if (!data) {
 		return null;
 	}
@@ -138,7 +138,7 @@ let processPortalsStats = (data) => {
 	let list = portals.map(p => {
 		return {
 			id: p.id,
-			name: p.name,
+			name: p.names[lang] || p.name,
 			value: data[p.id] || 0
 		};
 	});
@@ -158,8 +158,9 @@ let processPortalsStats = (data) => {
 };
 
 app.get('/api/portals/stats', checkCache, (req, res) => {
+	console.log(req.query);
 	api.getCountriesStats((err, data) => {
-		processAnswer(req, res, err, processPortalsStats(data));
+		processAnswer(req, res, err, processPortalsStats(data, req.query ? req.query.lang : 'en'));
 	});
 });
 
