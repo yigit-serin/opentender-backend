@@ -158,7 +158,6 @@ let processPortalsStats = (data, lang) => {
 };
 
 app.get('/api/portals/stats', checkCache, (req, res) => {
-	console.log(req.query);
 	api.getCountriesStats((err, data) => {
 		processAnswer(req, res, err, processPortalsStats(data, req.query ? req.query.lang : 'en'));
 	});
