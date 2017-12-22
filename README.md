@@ -2,12 +2,13 @@
 
 Provides the Data for the Opentender Portal
 
-written in Javascript for NodeJS 8.x
+written in Javascript for NodeJS 8.x & Elasticsearch 2.4.6
 
 ## Installation
 
 - install [NodeJS](https://nodejs.org/) 8.x and [NPM](https://www.npmjs.com/)
-- install [Elasticsearch](https://www.elastic.co/) 2.4.x
+- install [Elasticsearch](https://www.elastic.co/) 2.4.6
+- install [Elasticsearch OptenTender Plugin](https://github.com/digiwhist/elasticsearch-native-script-opentender) 2.4.6
 
 - run command `npm install` in the root folder of this repository
 
