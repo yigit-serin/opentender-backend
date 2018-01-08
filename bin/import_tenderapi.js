@@ -47,7 +47,6 @@ const converter = new Converter(null, library, config.data.path);
 const importerTender = new Importer(store, store.Tender, false, showProgress);
 let total = 0;
 let count = 0;
-let lasttimestamp = null;
 let stats = {};
 
 let importTenderPackage = (array, filename, cb) => {
@@ -76,7 +75,6 @@ let importTenderPackage = (array, filename, cb) => {
 	importerTender.setCount(count);
 
 	array.forEach(item => {
-		lasttimestamp = item.modified;
 		stats[item.country] = (stats[item.country] || 0) + 1;
 	});
 
@@ -150,8 +148,8 @@ let importTenderPackageFiles = (cb) => {
 	}
 	total = package_length * package_import.files.length;
 	importerTender.setTotal(total);
-	async.forEachSeries(package_import.files, importTenderPackageFile, () => {
-		if (lasttimestamp) {
+	async.forEachSeries(package_import.files, importTenderPackageFile, (err) => {
+		if (count > 0) {
 			console.log('Tender Country Stats:', JSON.stringify(stats));
 		} else {
 			console.error('Could not read any tenders');

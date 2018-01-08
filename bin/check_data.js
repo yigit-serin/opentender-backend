@@ -35,7 +35,9 @@ const stats = {
 		used_count: 0,
 		unused: {},
 		unused_count: 0
-	}
+	},
+	indicators: {},
+	cpvs: {}
 };
 const library = new Library(config);
 const converter = new Converter(stats, library, config.data.path);
@@ -58,6 +60,12 @@ const check = (filename, cb) => {
 				} else {
 					stats.countries.unused[tender.country] = (stats.countries.unused[tender.country] || 0) + 1;
 					stats.countries.unused_count++;
+				}
+				(tender.indicators || []).forEach(indicator => {
+					stats.indicators[indicator.type] = (stats.indicators[indicator.type] || 0) + 1;
+				});
+				if (tender.mainCPV) {
+					stats.cpvs[tender.mainCPV] = (stats.cpvs[tender.mainCPV] || 0) + 1;
 				}
 			});
 			if (!validateOpentender(array)) {
