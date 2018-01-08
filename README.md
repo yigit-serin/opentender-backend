@@ -48,6 +48,10 @@ let settings = {
 
 `npm run develop` to run the server & reload on file changes
 
+### Check
+
+`npm run check` to check the tender api data and the transformation according to the schema.json files
+
 ### Import
 
 `npm run import` to import the tender api data into the DB

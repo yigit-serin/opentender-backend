@@ -1,4 +1,4 @@
-let settings = {
+module.exports = {
 	listen: {  // where the backend should be listening
 		host: '127.0.0.1',
 		port: 3001
@@ -19,4 +19,3 @@ let settings = {
 	}
 };
 
-module.exports = settings;

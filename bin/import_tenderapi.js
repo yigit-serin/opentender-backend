@@ -27,6 +27,7 @@ const Importer = require('../lib/importer.js');
 const Library = require('../lib/library.js');
 const Converter = require('../lib/convert.js');
 const config = require('../config.js');
+const package_length = 20000;
 
 const validator = (filename) => {
 	const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
@@ -68,8 +69,8 @@ let importTenderPackage = (array, filename, cb) => {
 	}
 
 	// update status ui
-	if (array.length < 1000) {
-		importerTender.setTotal(total - (1000 - array.length));
+	if (array.length < package_length) {
+		importerTender.setTotal(total - (package_length - array.length));
 	}
 	count += array.length;
 	importerTender.setCount(count);
@@ -79,7 +80,17 @@ let importTenderPackage = (array, filename, cb) => {
 		stats[item.country] = (stats[item.country] || 0) + 1;
 	});
 
-	importerTender.bulk(array, (err) => {
+	let bulk_packages = [];
+	while (array.length > 0) {
+		let bulk_package = array.slice(0, 1000);
+		bulk_packages.push(bulk_package);
+		array = array.slice(1000);
+	}
+	async.forEachSeries(bulk_packages, (bulk_package, next) => {
+		importerTender.bulk(bulk_package, (err) => {
+			next(err);
+		});
+	}, (err) => {
 		if (err) {
 			console.error(err);
 			return cb(err);
@@ -104,35 +115,46 @@ let importTenderPackageFile = (filename, cb) => {
 	});
 };
 
-let importTenderPackageFiles = (ignoreNext, cb) => {
+let importTenderPackageFiles = (cb) => {
 	let nextPackageFilename = path.join(data_path, 'package_next.json');
 	let package_next;
-	if (ignoreNext) {
-		package_next = {"timestamp": "2015-01-01T00:00:00.000"};
-	} else {
-		// read package next json & all declared package files from it
-		if (!fs.existsSync(nextPackageFilename)) {
-			console.log('No import data file found', nextPackageFilename);
-			return cb();
-		}
-		package_next = JSON.parse(fs.readFileSync(nextPackageFilename).toString());
+	// read package next json & all declared package files from it
+	if (!fs.existsSync(nextPackageFilename)) {
+		console.log('No import data file found', nextPackageFilename);
+		return cb();
 	}
+	package_next = JSON.parse(fs.readFileSync(nextPackageFilename).toString());
 	let importpackagefilename = path.join(data_path, 'package_' + package_next.timestamp.replace(/[\/:\.]/g, '-') + '.json');
 	if (!fs.existsSync(importpackagefilename)) {
 		return cb('nothing to import: ' + importpackagefilename + ' does not exists');
 	}
 	console.log('Processing package', importpackagefilename);
 	let package_import = JSON.parse(fs.readFileSync(importpackagefilename).toString());
-	total = 1000 * package_import.files.length;
+	let unique = [];
+	let hasError = false;
+	package_import.files.forEach(filename => {
+		if (unique.indexOf(filename) < 0) {
+			unique.push(filename);
+		} else {
+			console.error('invalid package, file', filename, 'is duplicated');
+			hasError = true;
+		}
+		let fullfilename = path.join(data_path, 'import', filename);
+		if (!fs.existsSync(fullfilename)) {
+			console.error('invalid package, file', fullfilename, 'does not exists');
+			hasError = true;
+		}
+	});
+	if (hasError) {
+		return;
+	}
+	total = package_length * package_import.files.length;
 	importerTender.setTotal(total);
 	async.forEachSeries(package_import.files, importTenderPackageFile, () => {
 		if (lasttimestamp) {
-			package_next.timestamp = lasttimestamp;
-			fs.writeFileSync(nextPackageFilename, JSON.stringify(package_next));
-			console.log('Next Timestamp:', lasttimestamp);
 			console.log('Tender Country Stats:', JSON.stringify(stats));
 		} else {
-			console.error('Could not write new package_next.json');
+			console.error('Could not read any tenders');
 		}
 		cb();
 	});
@@ -161,7 +183,7 @@ openDB(err => {
 		console.log(err);
 		return closeDB();
 	}
-	importTenderPackageFiles(true, err => {
+	importTenderPackageFiles(err => {
 		if (err) {
 			console.log(err);
 			return closeDB();

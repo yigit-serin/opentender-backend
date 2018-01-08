@@ -1,5 +1,4 @@
 const Store = require('../lib/store.js');
-const async = require('async');
 const status = require('node-status');
 
 const console = status.console();
@@ -43,12 +42,17 @@ function importBuyers(items, cb) {
 				buyer = {
 					id: body.id,
 					body: body,
-					sources: []
+					countries: [],
+					count: 0
 				};
 				buyers.push(buyer);
 			}
-			// TODO: add other usefull informations
-			buyer.sources.push({tender: hit._source.id, country: hit._source.country});
+			if (buyer.countries.indexOf(hit._source.country) < 0) {
+				buyer.countries.push(hit._source.country);
+			}
+			buyer.count++;
+			// TODO: add other useful information
+			// buyer.sources.push({tender: hit._source.id, country: hit._source.country});
 		});
 	});
 	let ids = buyers.map(buyer => {
@@ -63,7 +67,7 @@ function importBuyers(items, cb) {
 				return buyer.body.id === h._source.body.id;
 			});
 			if (hit) {
-				hit._source.sources = hit._source.sources.concat(buyer.sources);
+				// hit._source.sources = hit._source.sources.concat(buyer.sources);
 				update_hits.push(hit);
 			} else {
 				new_list.push(buyer);
@@ -101,11 +105,16 @@ function importSuppliers(items, cb) {
 						supplier = {
 							id: body.id,
 							body: body,
-							sources: []
+							count: 0,
+							countries: []
 						};
 						suppliers.push(supplier);
 					}
-					supplier.sources.push({tender: hit._source.id, country: hit._source.country});
+					supplier.count++;
+					if (supplier.countries.indexOf(hit._source.country)<0) {
+						supplier.countries.push(hit._source.country);
+					}
+					// supplier.sources.push({tender: hit._source.id, country: hit._source.country});
 				});
 			});
 		});
@@ -122,7 +131,7 @@ function importSuppliers(items, cb) {
 				return supplier.body.id === h._source.body.id;
 			});
 			if (hit) {
-				hit._source.sources = hit._source.sources.concat(supplier.sources);
+				// hit._source.sources = hit._source.sources.concat(supplier.sources);
 				update_hits.push(hit);
 			} else {
 				new_list.push(supplier);

@@ -1,6 +1,6 @@
 {
   "name": "opentender-portal-backend",
-  "version": "0.8.4",
+  "version": "0.9.0",
   "description": "Opentender Portal Backend Server",
   "author": "okfde",
   "license": "MIT",
@@ -11,6 +11,7 @@
   "scripts": {
     "server": "node server.js",
     "develop": "nodemon server.js",
+    "check": "cd bin && node check_data.js",
     "import": "cd bin && node import_tenderapi.js",
     "entities": "cd bin && node build_entitiesdb.js",
     "downloads": "cd bin && node save_downloads.js"

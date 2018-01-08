@@ -74,7 +74,7 @@ fs.readdir(data_path, (err, items) => {
 		return (path.extname(item) === '.xz');
 	});
 	async.forEachSeries(items, check, () => {
-		let filename = path.resolve('./check_data_results.json');
+		let filename = path.resolve('./check_data_results_' + (new Date()) + '.json');
 		fs.writeFileSync(filename, JSON.stringify(stats, null, '\t'));
 		console.log('stats written', filename);
 		console.log('done.')

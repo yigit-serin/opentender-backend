@@ -19,7 +19,6 @@ store.init((err) => {
 		(next) => store.Tender.removeIndex(next),
 		(next) => store.Supplier.removeIndex(next),
 		(next) => store.Buyer.removeIndex(next),
-		(next) => store.PublicBody.removeIndex(next)
 	], (err) => {
 		if (err) return console.log(err);
 		console.log('done.');

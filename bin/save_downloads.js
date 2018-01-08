@@ -91,7 +91,7 @@ let dump = (country, cb) => {
 			file_json.size = fs.statSync(path.join(downloadsFolder, file_json.filename)).size;
 			file_ndjson.size = fs.statSync(path.join(downloadsFolder, file_ndjson.filename)).size;
 			let result = {country: countryId, count: totalItems, formats: {json: file_json, ndjson: file_ndjson}};
-			console.log(JSON.stringify(result));
+			// console.log(JSON.stringify(result));
 			results.push(result);
 			cb();
 		}, 100);
