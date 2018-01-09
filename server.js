@@ -317,8 +317,14 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.post(api_path + 'indicators/stats', checkCache, (req, res) => {
-		api.getIndicatorStats(req.body, country_id, (err, data) => {
+	app.post(api_path + 'indicators/range-stats', checkCache, (req, res) => {
+		api.getIndicatorRangeStats(req.body, country_id, (err, data) => {
+			processAnswer(req, res, err, data);
+		});
+	});
+
+	app.post(api_path + 'indicators/score-stats', checkCache, (req, res) => {
+		api.getIndicatorScoreStats(req.body, country_id, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
 	});
