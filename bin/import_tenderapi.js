@@ -289,11 +289,11 @@ let importTenderPackageFiles = (cb) => {
 		if (unique.indexOf(filename) < 0) {
 			unique.push(filename);
 		} else {
-			errors.push('invalid package, file', filename, 'is duplicated');
+			errors.push('invalid package, file ' + filename + ' is duplicated');
 		}
 		let fullfilename = path.join(data_path, 'import', filename);
 		if (!fs.existsSync(fullfilename)) {
-			errors.push('invalid package, file', fullfilename, 'does not exists');
+			errors.push('invalid package, file ' + fullfilename + ' does not exists');
 		}
 	});
 	if (errors.length > 0) {
