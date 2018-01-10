@@ -322,7 +322,7 @@ let importTenderPackageFiles = (cb) => {
 
 importTenderPackageFiles(err => {
 	if (err) {
-		console.log(error);
+		console.log(err);
 	}
 	if (!err) {
 		console.log('done.');
