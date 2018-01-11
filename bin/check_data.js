@@ -36,6 +36,12 @@ const stats = {
 		unused: {},
 		unused_count: 0
 	},
+	buyers: {
+		count: 0
+	},
+	suppliers: {
+		count: 0
+	},
 	indicators: {}
 };
 const library = new Library(config);
@@ -63,9 +69,16 @@ const check = (filename, cb) => {
 				(tender.indicators || []).forEach(indicator => {
 					stats.indicators[indicator.type] = (stats.indicators[indicator.type] || 0) + 1;
 				});
-				if (tender.ot.mainCPV) {
-					stats.cpvs[tender.ot.mainCPV] = (stats.cpvs[tender.ot.mainCPV] || 0) + 1;
-				}
+				(tender.buyers || []).forEach(buyer => {
+					stats.buyers.count++;
+				});
+				(tender.lots || []).forEach(lot => {
+					(lot.bids || []).forEach(bid => {
+						(bid.bidders || []).forEach(bidder => {
+							stats.suppliers.count++;
+						})
+					})
+				})
 			});
 			if (!validateOpentender(array)) {
 				console.log(validateOpentender.errors);
