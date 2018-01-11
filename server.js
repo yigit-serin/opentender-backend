@@ -400,6 +400,6 @@ api.init(err => {
 		return console.log('Opentender Api Error', err);
 	}
 	const listener = app.listen(config.listen.port, config.listen.host, () => {
-		console.log('Opentender Api is listening on: http://%s:%d (%s)', listener.address().address, listener.address().port, app.settings.env);
+		console.log('Opentender Api ' + pck.version + ' is listening on: http://%s:%d (%s)', listener.address().address, listener.address().port, app.settings.env);
 	});
 });
