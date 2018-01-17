@@ -65,16 +65,16 @@ let getCacheKey = (req) => {
 	return md5hash(key);
 };
 
-let addToCache = (req, data) => {
-	cache.upsert(getCacheKey(req), data, (err, stored) => {
+let addToCache = (req, data, duration) => {
+	cache.upsert(getCacheKey(req), data, duration, (err, stored) => {
 		if (err) {
 			return console.error(err);
 		}
 	});
 };
 
-let sendAndAddToCache = (req, res, data) => {
-	addToCache(req, data);
+let sendAndAddToCache = (req, res, data, duration) => {
+	addToCache(req, data, duration);
 	res.send(data);
 };
 
@@ -101,7 +101,9 @@ app.get('/api/test.json', (req, res) => {
 	res.send({version: pck.version, ok: 'yes'});
 });
 
-let processAnswer = (req, res, err, data, nocache) => {
+let short_cache_duration = 5 * 60 * 1000;
+
+let processAnswer = (req, res, err, data, duration) => {
 	if (err) {
 		console.log(err);
 		if (err === 404) {
@@ -109,11 +111,7 @@ let processAnswer = (req, res, err, data, nocache) => {
 		}
 		return res.sendStatus(500);
 	}
-	if (nocache) {
-		res.send({data: data});
-	} else {
-		sendAndAddToCache(req, res, {data: data});
-	}
+	sendAndAddToCache(req, res, {data: data}, duration);
 };
 
 app.get('/api/portals/list', (req, res) => {
@@ -158,8 +156,9 @@ let processPortalsStats = (data, lang) => {
 };
 
 app.get('/api/portals/stats', checkCache, (req, res) => {
-	api.getCountriesStats((err, data) => {
-		processAnswer(req, res, err, processPortalsStats(data, req.query ? req.query.lang : 'en'));
+	api.getCountriesStats((err, stats) => {
+		let data = processPortalsStats(stats, req.query ? req.query.lang : 'en');
+		processAnswer(req, res, err, data);
 	});
 });
 
@@ -176,7 +175,8 @@ app.get('/api/portals/usage', checkCache, (req, res) => {
 					used[key] = countries[key];
 				}
 			});
-			processAnswer(req, res, err, {used, unused});
+			let data = {used, unused};
+			processAnswer(req, res, err, data);
 		}
 	});
 });
@@ -191,7 +191,7 @@ let download_queue = async.queue((task, next) => {
 			//expires after 60 seconds
 			delete downloads[id];
 		}, 60000);
-		processAnswer(task.req, task.res, null, {id: id}, true);
+		task.res.send({data: {id: id}});
 		next();
 	} else {
 		api.streamTender(task.id, task.req, task.res, task.body, task.country_id, next);
@@ -204,7 +204,7 @@ let registerCountryApi = country => {
 
 	app.post(api_path + 'tender/search', checkCache, (req, res) => {
 		api.searchTender(req.body, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
+			processAnswer(req, res, err, data, short_cache_duration);
 		});
 	});
 
@@ -251,9 +251,9 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.post(api_path + 'autocomplete', (req, res) => {
+	app.post(api_path + 'autocomplete', checkCache, (req, res) => {
 		api.autocomplete(req.body.entity, req.body.field, req.body.search, country_id, (err, data) => {
-			processAnswer(req, res, err, data, true);
+			processAnswer(req, res, err, data, short_cache_duration);
 		});
 	});
 
@@ -331,13 +331,13 @@ let registerCountryApi = country => {
 
 	app.get(api_path + 'company/similar/:id', checkCache, (req, res) => {
 		api.searchSimilarCompany(req.params.id, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
+			processAnswer(req, res, err, data, short_cache_duration);
 		});
 	});
 
 	app.get(api_path + 'authority/id/:id', checkCache, (req, res) => {
 		api.getAuthority(req.params.id, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
+			processAnswer(req, res, err, data, short_cache_duration);
 		});
 	});
 
@@ -349,30 +349,12 @@ let registerCountryApi = country => {
 
 	app.get(api_path + 'authority/id/:id', checkCache, (req, res) => {
 		api.searchSimilarAuthority(req.params.id, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
-	app.get(api_path + 'quality/usage', checkCache, (req, res) => {
-		api.getFieldsUsage(country_id, (err, data) => {
-			processAnswer(req, res, err, data);
+			processAnswer(req, res, err, data, short_cache_duration);
 		});
 	});
 
 	app.get(api_path + 'location/map.geo.json', checkCache, (req, res) => {
 		api.getLocationsMap((err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
-	app.get(api_path + 'company/similar/:id', checkCache, (req, res) => {
-		api.searchSimilarCompany(req.params.id, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
-	app.get(api_path + 'authority/similar/:id', checkCache, (req, res) => {
-		api.searchSimilarAuthority(req.params.id, country_id, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
 	});
