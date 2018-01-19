@@ -202,55 +202,6 @@ let registerCountryApi = country => {
 	let api_path = '/api/' + (country.id || 'all') + '/';
 	let country_id = (country.id && (country.id !== 'all') ? country.id.toUpperCase() : null);
 
-	app.post(api_path + 'tender/search', checkCache, (req, res) => {
-		api.searchTender(req.body, country_id, (err, data) => {
-			processAnswer(req, res, err, data, short_cache_duration);
-		});
-	});
-
-	app.get(api_path + 'download/id/:id', (req, res) => {
-		let body = downloads[req.params.id];
-		if (!body) {
-			return res.status(401).send('download token invalid/expired');
-		}
-		delete downloads[req.params.id];
-		download_queue.push({id: req.params.id, req, res, body, country_id});
-	});
-
-	app.post(api_path + 'tender/download', (req, res) => {
-		download_queue.push({request: true, req, res, country_id});
-	});
-
-	app.post(api_path + 'company/search', checkCache, (req, res) => {
-		api.searchSupplier(req.body, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
-	app.get(api_path + 'company/nuts', checkCache, (req, res) => {
-		api.getCompanyNutsStats(country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
-	app.post(api_path + 'authority/search', checkCache, (req, res) => {
-		api.searchBuyer(req.body, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
-	app.get(api_path + 'authority/nuts', checkCache, (req, res) => {
-		api.getAuthorityNutsStats(country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
-	app.get(api_path + 'sector/list/main', checkCache, (req, res) => {
-		api.getCPVUsageStats(country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
 	app.post(api_path + 'autocomplete', checkCache, (req, res) => {
 		api.autocomplete(req.body.entity, req.body.field, req.body.search, country_id, (err, data) => {
 			processAnswer(req, res, err, data, short_cache_duration);
@@ -269,6 +220,26 @@ let registerCountryApi = country => {
 		});
 	});
 
+	app.post(api_path + 'region/stats', checkCache, (req, res) => {
+		api.getRegionStats(req.body, country_id, (err, data) => {
+			processAnswer(req, res, err, data);
+		});
+	});
+
+
+	app.post(api_path + 'indicators/range-stats', checkCache, (req, res) => {
+		api.getIndicatorRangeStats(req.body, country_id, (err, data) => {
+			processAnswer(req, res, err, data);
+		});
+	});
+
+	app.post(api_path + 'indicators/score-stats', checkCache, (req, res) => {
+		api.getIndicatorScoreStats(req.body, country_id, (err, data) => {
+			processAnswer(req, res, err, data);
+		});
+	});
+
+
 	app.get(api_path + 'sector/id/:id', checkCache, (req, res) => {
 		api.getCPV({id: req.params.id, lang: req.query.lang}, (err, data) => {
 			processAnswer(req, res, err, data);
@@ -281,11 +252,12 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.post(api_path + 'region/stats', checkCache, (req, res) => {
-		api.getRegionStats(req.body, country_id, (err, data) => {
+	app.get(api_path + 'sector/list/main', checkCache, (req, res) => {
+		api.getCPVUsageStats(country_id, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
 	});
+
 
 	app.get(api_path + 'tender/id/:id', checkCache, (req, res) => {
 		api.getTender({id: req.params.id, lang: req.query.lang}, (err, data) => {
@@ -298,6 +270,57 @@ let registerCountryApi = country => {
 			processAnswer(req, res, err, data);
 		});
 	});
+
+	app.post(api_path + 'tender/search', checkCache, (req, res) => {
+		api.searchTender(req.body, country_id, (err, data) => {
+			processAnswer(req, res, err, data, short_cache_duration);
+		});
+	});
+
+	app.post(api_path + 'tender/download', (req, res) => {
+		download_queue.push({request: true, req, res, country_id});
+	});
+
+	app.get(api_path + 'download/id/:id', (req, res) => {
+		let body = downloads[req.params.id];
+		if (!body) {
+			return res.status(401).send('download token invalid/expired');
+		}
+		delete downloads[req.params.id];
+		download_queue.push({id: req.params.id, req, res, body, country_id});
+	});
+
+
+	app.get(api_path + 'authority/id/:id', checkCache, (req, res) => {
+		api.getAuthority(req.params.id, country_id, (err, data) => {
+			processAnswer(req, res, err, data, short_cache_duration);
+		});
+	});
+
+	app.post(api_path + 'authority/stats', checkCache, (req, res) => {
+		api.getAuthorityStats(req.body, country_id, (err, data) => {
+			processAnswer(req, res, err, data);
+		});
+	});
+
+	app.get(api_path + 'authority/similar/:id', checkCache, (req, res) => {
+		api.searchSimilarAuthority(req.params.id, country_id, (err, data) => {
+			processAnswer(req, res, err, data, short_cache_duration);
+		});
+	});
+
+	app.post(api_path + 'authority/search', checkCache, (req, res) => {
+		api.searchBuyer(req.body, country_id, (err, data) => {
+			processAnswer(req, res, err, data);
+		});
+	});
+
+	app.get(api_path + 'authority/nuts', checkCache, (req, res) => {
+		api.getAuthorityNutsStats(country_id, (err, data) => {
+			processAnswer(req, res, err, data);
+		});
+	});
+
 
 	app.get(api_path + 'company/id/:id', checkCache, (req, res) => {
 		api.getCompany(req.params.id, country_id, (err, data) => {
@@ -317,47 +340,18 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.post(api_path + 'indicators/range-stats', checkCache, (req, res) => {
-		api.getIndicatorRangeStats(req.body, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
-	app.post(api_path + 'indicators/score-stats', checkCache, (req, res) => {
-		api.getIndicatorScoreStats(req.body, country_id, (err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
-
 	app.get(api_path + 'company/similar/:id', checkCache, (req, res) => {
 		api.searchSimilarCompany(req.params.id, country_id, (err, data) => {
 			processAnswer(req, res, err, data, short_cache_duration);
 		});
 	});
 
-	app.get(api_path + 'authority/id/:id', checkCache, (req, res) => {
-		api.getAuthority(req.params.id, country_id, (err, data) => {
-			processAnswer(req, res, err, data, short_cache_duration);
-		});
-	});
-
-	app.post(api_path + 'authority/stats', checkCache, (req, res) => {
-		api.getAuthorityStats(req.body, country_id, (err, data) => {
+	app.post(api_path + 'company/search', checkCache, (req, res) => {
+		api.searchSupplier(req.body, country_id, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
 	});
 
-	app.get(api_path + 'authority/id/:id', checkCache, (req, res) => {
-		api.searchSimilarAuthority(req.params.id, country_id, (err, data) => {
-			processAnswer(req, res, err, data, short_cache_duration);
-		});
-	});
-
-	app.get(api_path + 'location/map.geo.json', checkCache, (req, res) => {
-		api.getLocationsMap((err, data) => {
-			processAnswer(req, res, err, data);
-		});
-	});
 
 };
 portals.forEach(registerCountryApi);
