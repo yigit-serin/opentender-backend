@@ -42,7 +42,7 @@ let compressStream = (stream) => {
 let streamItems = (country_id, onItems, onEnd) => {
 	let query = {match_all: {}};
 	if (country_id.toUpperCase() !== 'ALL') {
-		query = {term: {country: country_id.toUpperCase()}};
+		query = {term: {'ot.country': country_id.toUpperCase()}};
 	}
 	let pos = 0;
 	store.Tender.streamQuery(1000, query,
