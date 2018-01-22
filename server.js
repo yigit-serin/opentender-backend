@@ -334,7 +334,7 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.post(api_path + 'company/nuts', checkCache, (req, res) => {
+	app.get(api_path + 'company/nuts', checkCache, (req, res) => {
 		api.getCompanyNutsStats(country_id, (err, data) => {
 			processAnswer(req, res, err, data);
 		});
