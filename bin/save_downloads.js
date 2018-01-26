@@ -15,6 +15,7 @@ const status = require('node-status');
 const Store = require('../lib/store.js');
 const config = require('../config.js');
 const console = status.console();
+const Utils = require('../lib/utils');
 
 let currentCountry = '-';
 let status_items = status.addItem('items');
@@ -103,6 +104,7 @@ let dump = (country, cb) => {
 				file_json_compress.write(',');
 			}
 			items.forEach(item => {
+				Utils.cleanOtFields(item._source);
 				file_ndjson_serialize.write(item._source);
 			});
 			file_json_compress.write(items.map(item => {
