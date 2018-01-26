@@ -17,6 +17,8 @@ const config = require('../config.js');
 const console = status.console();
 const Utils = require('../lib/utils');
 
+const now = (new Date()).valueOf();
+
 let currentCountry = '-';
 let status_items = status.addItem('items');
 status.addItem('country', {
@@ -71,6 +73,7 @@ let dump = (country, cb) => {
 	currentCountry = country.name;
 	let countryId = (country.id ? country.id.toLowerCase() : 'all');
 	let filename = 'data-' + countryId;
+	status.console.log('Saving downloads for ' + currentCountry);
 
 	let file_ndjson = {filename: filename + '.ndjson.gz', size: 0};
 	let file_ndjson_stream = downloadFolderFileStream(file_ndjson.filename);
@@ -91,8 +94,7 @@ let dump = (country, cb) => {
 		setTimeout(() => {
 			file_json.size = fs.statSync(path.join(downloadsFolder, file_json.filename)).size;
 			file_ndjson.size = fs.statSync(path.join(downloadsFolder, file_ndjson.filename)).size;
-			let result = {country: countryId, count: totalItems, formats: {json: file_json, ndjson: file_ndjson}};
-			// console.log(JSON.stringify(result));
+			let result = {country: countryId, count: totalItems, lastUpdate: now, formats: {json: file_json, ndjson: file_ndjson}};
 			results.push(result);
 			cb();
 		}, 100);
