@@ -73,7 +73,7 @@ let dump = (country, cb) => {
 	currentCountry = country.name;
 	let countryId = (country.id ? country.id.toLowerCase() : 'all');
 	let filename = 'data-' + countryId;
-	status.console.log('Saving downloads for ' + currentCountry);
+	status.console('Saving downloads for ' + currentCountry);
 
 	let file_ndjson = {filename: filename + '.ndjson.gz', size: 0};
 	let file_ndjson_stream = downloadFolderFileStream(file_ndjson.filename);
