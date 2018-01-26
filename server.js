@@ -114,12 +114,8 @@ let processAnswer = (req, res, err, data, duration) => {
 	sendAndAddToCache(req, res, {data: data}, duration);
 };
 
-app.get('/api/portals/list', (req, res) => {
-	res.send({data: portals});
-});
-
-app.get('/api/portals/geo.json', (req, res) => {
-	res.send(portals_geojson);
+app.get('/api/portals/geo.json', checkCache, (req, res) => {
+	sendAndAddToCache(req, res, portals_geojson);
 });
 
 let processPortalsStats = (data, lang) => {
