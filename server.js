@@ -50,11 +50,14 @@ app.all('*', (req, res, next) => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
-morgan.token('cached', (req) => {
-	return req.cached ? 'true' : 'false';
-});
+if (app.settings.env !== 'production') {
 
-app.use(morgan('[:date[clf]] - cached: :cached - :method :url - :res[content-length] - :response-time ms'));
+	morgan.token('cached', (req) => {
+		return req.cached ? 'true' : 'false';
+	});
+
+	app.use(morgan('[:date[clf]] - cached: :cached - :method :url - :res[content-length] - :response-time ms'));
+}
 
 let md5hash = (value) => {
 	return crypto.createHash('md5').update(value).digest('hex');
