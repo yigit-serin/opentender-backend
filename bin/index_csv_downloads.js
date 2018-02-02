@@ -21,7 +21,9 @@ let indexCSV = (filename, cb) => {
 		info.count++;
 	});
 	parser.on('end', function () {
-		info.size = fs.statSync(path.join(download_path, filename)).size;
+		let stats = fs.statSync(path.join(download_path, filename));
+		info.size = stats.size;
+		info.lastUpdate = stats.mtimeMs;
 		downloads.push(info);
 		console.log(info);
 		cb();
