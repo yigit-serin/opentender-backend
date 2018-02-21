@@ -1,6 +1,6 @@
 {
   "name": "opentender-portal-backend",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Opentender Portal Backend Server",
   "author": "okfde",
   "license": "MIT",
@@ -16,14 +16,14 @@
     "downloads": "cd bin && node save_downloads.js"
   },
   "dependencies": {
-    "ajv": "=5.5.2",
+    "ajv": "=6.1.1",
     "async": "2.6.0",
     "body-parser": "1.18.2",
     "csv-streamify": "^3.0.4",
     "debug": "^3.1.0",
-    "elasticsearch": "14.0.0",
+    "elasticsearch": "14.1.0",
     "express": "^4.16.2",
-    "helmet": "^3.10.0",
+    "helmet": "^3.11.0",
     "js-yaml": "3.10.0",
     "lzma-native": "3.0.4",
     "memcached": "^2.2.2",
@@ -36,7 +36,7 @@
     "request": "^2.83.0"
   },
   "devDependencies": {
-    "eslint": "4.16.0",
-    "nodemon": "1.14.11"
+    "eslint": "4.18.1",
+    "nodemon": "1.15.1"
   }
 }
