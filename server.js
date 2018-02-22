@@ -187,15 +187,19 @@ let downloads = {};
 let download_queue = async.queue((task, next) => {
 	if (task.request) {
 		const id = md5hash(JSON.stringify(task.req.body) + (new Date()).valueOf());
-		downloads[id] = task.req.body;
+		downloads[id] = {body: task.req.body, format: task.format};
 		setTimeout(() => {
-			//expires after 60 seconds
+			// expires after 60 seconds
 			delete downloads[id];
 		}, 60000);
 		task.res.send({data: {id: id}});
 		next();
 	} else {
-		api.streamTender(task.id, task.req, task.res, task.body, task.country_id, next);
+		if (task.format === 'csv') {
+			api.streamTenderCSV(task.id, task.req, task.res, task.body, task.country_id, next);
+		} else {
+			api.streamTenderJSON(task.id, task.req, task.res, task.body, task.country_id, next);
+		}
 	}
 }, 6);
 
@@ -278,17 +282,21 @@ let registerCountryApi = country => {
 		});
 	});
 
-	app.post(api_path + 'tender/download', (req, res) => {
-		download_queue.push({request: true, req, res, country_id});
+	app.post(api_path + 'tender/download/json', (req, res) => {
+		download_queue.push({request: true, format: 'json', req, res, country_id});
+	});
+
+	app.post(api_path + 'tender/download/csv', (req, res) => {
+		download_queue.push({request: true, format: 'csv', req, res, country_id});
 	});
 
 	app.get(api_path + 'download/id/:id', (req, res) => {
-		let body = downloads[req.params.id];
-		if (!body) {
+		let download = downloads[req.params.id];
+		if (!download) {
 			return res.status(401).send('download token invalid/expired');
 		}
 		delete downloads[req.params.id];
-		download_queue.push({id: req.params.id, req, res, body, country_id});
+		download_queue.push({id: req.params.id, format: download.format, req, res, body: download.body, country_id});
 	});
 
 
