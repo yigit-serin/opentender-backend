@@ -73,6 +73,9 @@ let getCacheKey = (req) => {
 let addToCache = (req, data, duration) => {
 	cache.upsert(getCacheKey(req), data, duration, (err, stored) => {
 		if (err) {
+			if (err.toString().indexOf('The length of the value is greater than') > 0) {
+				return console.error('Could not cache', req.originalUrl, ' - too large:', JSON.stringify(data).length);
+			}
 			return console.error(err);
 		}
 	});
@@ -110,7 +113,7 @@ let short_cache_duration = 5 * 60 * 1000;
 
 let processAnswer = (req, res, err, data, duration) => {
 	if (err) {
-		console.log(err);
+		console.log(err, req.originalUrl);
 		if (err === 404) {
 			return res.sendStatus(404);
 		}
