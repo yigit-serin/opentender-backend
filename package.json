@@ -1,6 +1,6 @@
 {
   "name": "opentender-portal-backend",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Opentender Portal Backend Server",
   "author": "okfde",
   "license": "MIT",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "ajv": "=6.1.1",
+    "archiver": "^2.1.1",
     "async": "=2.6.0",
     "body-parser": "=1.18.2",
     "csv-streamify": "=3.0.4",
