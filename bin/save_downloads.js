@@ -18,6 +18,7 @@ const console = status.console();
 const Utils = require('../lib/utils');
 const CSV = require('../lib/csv');
 const Library = require('../lib/library.js');
+const archiver = require('archiver');
 
 const now = (new Date()).valueOf();
 
@@ -26,6 +27,7 @@ const csv = new CSV(library);
 
 
 let currentCountry = '-';
+let currentAction = '';
 let status_items = status.addItem('items');
 status.addItem('country', {
 	custom: () => {
@@ -33,6 +35,11 @@ status.addItem('country', {
 	}
 });
 let status_portals = status.addItem('portals');
+status.addItem('current', {
+	custom: () => {
+		return currentAction;
+	}
+});
 
 let downloadsFolder = path.join(config.data.shared, 'downloads');
 
@@ -46,6 +53,12 @@ let compressStream = (stream) => {
 	let compress = zlib.createGzip();
 	compress.pipe(stream);
 	return compress;
+};
+
+let uncompressStream = (stream) => {
+	let uncompress = zlib.createGunzip();
+	stream.pipe(uncompress);
+	return uncompress;
 };
 
 let streamItems = (country_id, onItems, onEnd) => {
@@ -75,71 +88,249 @@ let downloadFolderFileStream = (filename) => {
 	return outputStream;
 };
 
+
+class DownloadPack {
+	constructor(format, filename) {
+		this.format = format;
+		this.filename = filename;
+		this.zipfilename = filename + '-' + this.format + '.zip';
+		this.streams = {};
+	}
+
+	openStream(filename) {
+		let filestream = downloadFolderFileStream(filename);
+		let stream = compressStream(filestream);
+		stream.orgstream = filestream;
+		return stream;
+	}
+
+	closeStream(stream, cb) {
+		stream.orgstream.on('close', (err) => {
+			cb();
+		});
+		stream.end();
+	}
+
+	validateStream(year) {
+		if (!this.streams[year]) {
+			let filename = this.filename + '-' + year + '.' + this.format;
+			this.streams[year] = {
+				filename: filename,
+				stream: this.openStream(filename + '.gz'),
+				count: 0
+			};
+		}
+		return this.streams[year];
+	}
+
+	write(year, data) {
+		let yearstream = this.validateStream(year);
+		yearstream.stream.write(data);
+		yearstream.count++;
+	}
+
+	zip(cb) {
+		let toZipFilenames = Object.keys(this.streams).map(key => this.streams[key].filename);
+		const stream = downloadFolderFileStream(this.zipfilename);
+		const archive = archiver('zip', {
+			// store: true
+			zlib: {level: 9} // Sets the compression level.
+		});
+		stream.on('close', function () {
+			currentAction = '';
+			// console.log(archive.pointer() + ' total bytes');
+			cb();
+		});
+		stream.on('end', function () {
+			// console.log('Data has been drained');
+		});
+		archive.on('entry', function (entry) {
+			currentAction = 'Zipping: ' + entry.name;
+		});
+		archive.on('warning', function (err) {
+			console.log(err);
+		});
+		archive.on('error', function (err) {
+			console.log(err);
+		});
+		archive.on('progress', function (progress) {
+			// console.log(progress);
+		});
+		toZipFilenames.forEach(toZipFilename => {
+			let fullFilename = path.join(downloadsFolder, toZipFilename + '.gz');
+			let filestream = fs.createReadStream(fullFilename);
+			let stream = uncompressStream(filestream);
+			archive.append(stream, {name: toZipFilename});
+			// archive.file(fullFilename, {name: toZipFilename});
+		});
+		// console.log('Zipping', filename, 'Files:', JSON.stringify(toZipFilenames));
+		archive.pipe(stream);
+		archive.finalize();
+	}
+
+	removeFiles(cb) {
+		async.forEach(Object.keys(this.streams), (key, next) => {
+			let fullFilename = path.join(downloadsFolder, this.streams[key].filename + '.gz');
+			fs.unlink(fullFilename, (err) => {
+				next(err);
+			});
+		}, (err) => {
+			cb(err)
+		});
+	}
+
+	closeStreams(cb) {
+		async.forEach(Object.keys(this.streams), (key, next) => {
+			this.closeStream(this.streams[key].stream, next);
+		}, (err) => {
+			cb(err)
+		});
+	}
+
+	close(cb) {
+		this.closeStreams((err) => {
+			if (err) {
+				return cb(err);
+			}
+			this.zip((err) => {
+				if (err) {
+					return cb(err);
+				}
+				this.removeFiles((err) => {
+					cb(err, {
+						filename: this.zipfilename,
+						size: fs.statSync(path.join(downloadsFolder, this.zipfilename)).size
+					});
+				});
+			});
+		});
+	}
+
+	writeTender(data, index, total) {
+
+	}
+}
+
+class DownloadPackCSV extends DownloadPack {
+	constructor(filename) {
+		super('csv', filename);
+	}
+
+	writeTender(year, tender) {
+		let yearstream = this.validateStream(year);
+		this.write(year, csv.transform(tender, yearstream.count + 1));
+	}
+
+}
+
+class DownloadPackJSON extends DownloadPack {
+
+	constructor(filename) {
+		super('json', filename);
+	}
+
+	openStream(filename) {
+		let filestream = downloadFolderFileStream(filename);
+		let stream = compressStream(filestream);
+		stream.orgstream = filestream;
+		stream.write('[');
+		return stream;
+	}
+
+	closeStream(stream, cb) {
+		stream.write(']');
+		stream.orgstream.on('close', (err) => {
+			cb();
+		});
+		stream.end();
+	}
+
+	writeTender(year, tender) {
+		let yearstream = this.validateStream(year);
+		this.write(year, (yearstream.count !== 0 ? ',' : '') + JSON.stringify(tender));
+	}
+
+}
+
+class DownloadPackNDJSON extends DownloadPack {
+	constructor(filename) {
+		super('ndjson', filename);
+	}
+
+	openStream(filename) {
+		let filestream = downloadFolderFileStream(filename);
+		let compressstream = compressStream(filestream);
+		let stream = ndjson.serialize();
+		stream.compressstream = compressstream;
+		stream.orgstream = filestream;
+		stream.on('data', line => {
+			compressstream.write(line);
+		});
+		return stream;
+	}
+
+	closeStream(stream, cb) {
+		stream.orgstream.on('close', () => {
+			cb();
+		});
+		stream.end();
+		stream.compressstream.end();
+	}
+
+	writeTender(year, tender) {
+		this.write(year, tender);
+	}
+
+}
+
 let dump = (country, cb) => {
 	currentCountry = country.name;
 	let countryId = (country.id ? country.id.toLowerCase() : 'all');
 	let filename = 'data-' + countryId;
 	console.log('Saving downloads for ' + currentCountry);
 
-	let file_ndjson = {filename: filename + '.ndjson.gz', size: 0};
-	let file_ndjson_stream = downloadFolderFileStream(file_ndjson.filename);
-	let file_ndjson_compress = compressStream(file_ndjson_stream);
-	let file_ndjson_serialize = ndjson.serialize();
-	file_ndjson_serialize.on('data', line => {
-		file_ndjson_compress.write(line);
-	});
-
-	let file_json = {filename: filename + '.json.gz', size: 0};
-	let file_json_stream = downloadFolderFileStream(file_json.filename);
-	let file_json_compress = compressStream(file_json_stream);
-	file_json_compress.write('[');
-
-	let file_csv = {filename: filename + '.csv.gz', size: 0};
-	let file_csv_stream = downloadFolderFileStream(file_csv.filename);
-	let file_csv_compress = compressStream(file_csv_stream);
-	file_csv_compress.write(csv.header());
-
 	let totalItems = 0;
+	let csvpack = new DownloadPackCSV(filename);
+	let jsonpack = new DownloadPackJSON(filename);
+	let ndjsonpack = new DownloadPackNDJSON(filename);
 
-	file_ndjson_stream.on('close', () => {
-		setTimeout(() => {
-			file_json.size = fs.statSync(path.join(downloadsFolder, file_json.filename)).size;
-			file_ndjson.size = fs.statSync(path.join(downloadsFolder, file_ndjson.filename)).size;
-			file_csv.size = fs.statSync(path.join(downloadsFolder, file_csv.filename)).size;
-			let result = {country: countryId, count: totalItems, lastUpdate: now, formats: {json: file_json, ndjson: file_ndjson, csv: file_csv}};
-			results.push(result);
-			cb();
-		}, 1000);
-	});
-
+	currentAction = 'Streaming: ' + filename;
 	streamItems(countryId,
 		(items, pos, total) => {
-			if (totalItems !== 0) {
-				file_json_compress.write(',');
-			}
 			items.forEach((item, index) => {
+				let year = (item._source.ot.date || '').slice(0, 4);
+				if (year.length !== 4) {
+					year = 'year-unavailable';
+				}
 				Utils.cleanOtFields(item._source);
-				file_ndjson_serialize.write(item._source);
-				file_csv_compress.write(csv.transform(item._source, pos + index));
+				csvpack.writeTender(year, item._source);
+				jsonpack.writeTender(year, item._source);
+				ndjsonpack.writeTender(year, item._source);
 			});
-			file_json_compress.write(items.map(item => {
-				return JSON.stringify(item._source);
-			}).join(','));
 			status_items.count = pos;
 			status_items.max = total;
 			totalItems = total;
 			return true;
 		}, (err, total) => {
 			totalItems = total;
-			if (err) {
-				console.log('error streaming tenders', err);
-			} else {
-				file_json_compress.write(']');
-			}
-			file_csv_compress.end();
-			file_json_compress.end();
-			file_ndjson_serialize.end();
-			file_ndjson_compress.end();
+			csvpack.close((err, file_csv) => {
+				jsonpack.close((err, file_json) => {
+					ndjsonpack.close((err, file_ndjson) => {
+						let result = {
+							country: countryId,
+							count: totalItems,
+							lastUpdate: now,
+							formats: {
+								json: file_json,
+								ndjson: file_ndjson,
+								csv: file_csv
+							}
+						};
+						results.push(result);
+						cb();
+					});
+				});
+			});
 		});
 };
 
@@ -148,7 +339,7 @@ store.init((err) => {
 		return console.log(err);
 	}
 	status.start(
-		{pattern: 'Dumping: {uptime} | {spinner.cyan} | {items} | {country.custom} | {portals}'}
+		{pattern: '@{uptime} | {spinner.cyan} | {items} | {country.custom} | {portals} | {current.custom}'}
 	);
 	let pos = 0;
 	status_portals.count = 0;
@@ -163,7 +354,7 @@ store.init((err) => {
 		}
 		store.close(() => {
 			status.stop();
-			fs.writeFileSync(path.join(downloadsFolder, 'downloads.json'), JSON.stringify(results, null, '\t'));
+			fs.writeFileSync(path.join(downloadsFolder, 'test-downloads.json'), JSON.stringify(results, null, '\t'));
 			console.log('done');
 		});
 	});
