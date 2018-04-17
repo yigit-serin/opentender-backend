@@ -354,7 +354,7 @@ store.init((err) => {
 		}
 		store.close(() => {
 			status.stop();
-			fs.writeFileSync(path.join(downloadsFolder, 'test-downloads.json'), JSON.stringify(results, null, '\t'));
+			fs.writeFileSync(path.join(downloadsFolder, 'downloads.json'), JSON.stringify(results, null, '\t'));
 			console.log('done');
 		});
 	});
