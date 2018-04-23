@@ -218,6 +218,9 @@ class DownloadPackCSV extends DownloadPack {
 
 	writeTender(year, tender) {
 		let yearstream = this.validateStream(year);
+		if (yearstream.count === 0) {
+			yearstream.stream.write(csv.header());
+		}
 		this.write(year, csv.transform(tender, yearstream.count + 1));
 	}
 
