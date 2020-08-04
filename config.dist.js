@@ -16,6 +16,9 @@ module.exports = {
 	cache: {
 		type: 'disabled', // disabled | internal | memcached
 		memcached: ['127.0.0.1:11211'] // if type == memcached, server address(es)
+	},
+	country: {
+		code: 'JM'
 	}
 };
 

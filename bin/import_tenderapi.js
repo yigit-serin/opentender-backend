@@ -15,7 +15,6 @@
 const path = require('path');
 const fs = require('fs');
 const async = require('async');
-const lzma = require('lzma-native');
 const Ajv = require('ajv');
 const status = require('node-status');
 const console = status.console();
@@ -29,12 +28,10 @@ const Library = require('../lib/library.js');
 const Converter = require('../lib/convert.js');
 
 const config = require('../config.js');
-const package_length = 20000;
 const data_path = config.data.tenderapi;
 const store = new Store(config);
 const library = new Library(config);
 const converter = new Converter(null, library, config.data.path);
-let tender_total = 0;
 let tender_count = 0;
 let stats = {};
 
@@ -59,9 +56,9 @@ let clearIndex = (index, cb) => {
 let openDB = (cb) => {
 	async.waterfall([
 		(next) => store.init(next),
-//		(next) => clearIndex(store.Tender, next),
-//		(next) => clearIndex(store.Buyer, next),
-//		(next) => clearIndex(store.Supplier, next),
+		(next) => clearIndex(store.Tender, next),
+		(next) => clearIndex(store.Buyer, next),
+		(next) => clearIndex(store.Supplier, next),
 	], (err) => {
 		cb(err);
 	});
@@ -78,7 +75,7 @@ let safeBulkPackages = (array) => {
 };
 
 let importBulk = (array, index, status, cb) => {
-	if (array.length===0) {
+	if (array.length === 0) {
 		return cb();
 	}
 	let bulk_packages = safeBulkPackages(array);
@@ -95,7 +92,7 @@ let importBulk = (array, index, status, cb) => {
 };
 
 let updateBulk = (array, index, cb) => {
-	if (array.length===0) {
+	if (array.length === 0) {
 		return cb();
 	}
 	let bulk_packages = safeBulkPackages(array);
@@ -109,27 +106,17 @@ let updateBulk = (array, index, cb) => {
 };
 
 let importTenderPackage = (array, filename, cb) => {
-	// validate tenderapi
 	let valid = validateTenderAPI(array);
 	if (!valid) {
 		return cb({msg: 'tenderapi schema error in filename ' + filename, errors: validateTenderAPI.errors});
 	}
 
-	// remove unused variables & clean some data
 	array = converter.transform(array);
 
-	// validate opentender
 	valid = validateOpentender(array);
 	if (!valid) {
 		return cb({msg: 'opentender schema error in filename ' + filename, errors: validateOpentender.errors});
 	}
-
-	// update status ui
-	if (array.length < package_length) {
-		status_tenders.max = tender_total - (package_length - array.length);
-	}
-	tender_count += array.length;
-	status_tenders.count = tender_count;
 
 	array.forEach(item => {
 		stats[item.country] = (stats[item.country] || 0) + 1;
@@ -152,10 +139,8 @@ let importTenderPackageFile = (filename, cb) => {
 			return cb(err);
 		}
 		console.log('Importing', fullfilename);
-		lzma.decompress(content, decompressedResult => {
-			let array = JSON.parse(decompressedResult.toString());
-			importTenderPackage(array, filename, cb);
-		});
+		let array = JSON.parse(content.toString());
+		importTenderPackage(array, filename, cb);
 	});
 };
 
@@ -269,44 +254,13 @@ let importSuppliers = (items, cb) => {
 	});
 };
 
-let importTenderPackageFiles = (cb) => {
-	let nextPackageFilename = path.join(data_path, 'package_next.json');
-	//let package_next;
-	// read package next json & all declared package files from it
-	//if (!fs.existsSync(nextPackageFilename)) {
-	//	return cb('No import data file found ' + nextPackageFilename);
-	//}
-	//package_next = JSON.parse(fs.readFileSync(nextPackageFilename).toString());
-	let importpackagefilename = path.join(data_path, 'package_continue.json');
-	if (!fs.existsSync(importpackagefilename)) {
-		return cb('nothing to import: ' + importpackagefilename + ' does not exists');
-	}
-	console.log('Processing package', importpackagefilename);
-	let package_import = JSON.parse(fs.readFileSync(importpackagefilename).toString());
-	let unique = [];
-	let errors = [];
-	package_import.files.forEach(filename => {
-		if (unique.indexOf(filename) < 0) {
-			unique.push(filename);
-		} else {
-			errors.push('invalid package, file ' + filename + ' is duplicated');
-		}
-		let fullfilename = path.join(data_path, 'import', filename);
-		if (!fs.existsSync(fullfilename)) {
-			errors.push('invalid package, file ' + fullfilename + ' does not exists');
-		}
-	});
-	if (errors.length > 0) {
-		return cb(errors);
-	}
-	tender_total = package_length * package_import.files.length;
-	status_tenders.max = tender_total;
+let importTenderPackageFiles = (filename, cb) => {
 	openDB((err) => {
 		if (err) {
 			return cb(err);
 		}
 		status.start();
-		async.forEachSeries(package_import.files, importTenderPackageFile, (err) => {
+		importTenderPackageFile(filename, err => {
 			status.stop();
 			if (tender_count > 0) {
 				console.log('Tender Country Stats:', JSON.stringify(stats));
@@ -320,7 +274,7 @@ let importTenderPackageFiles = (cb) => {
 	});
 };
 
-importTenderPackageFiles(err => {
+importTenderPackageFiles('JM-dataset.json', err => {
 	if (err) {
 		console.log(err);
 	}

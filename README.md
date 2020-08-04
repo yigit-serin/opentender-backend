@@ -12,7 +12,7 @@ written in Javascript for NodeJS 8.x & Elasticsearch 2.4.6
 
 - run command `npm install` in the root folder of this repository
 
-- prepare the data folder (see https://github.com/digiwhist/opentender-data)
+- prepare the data folder (see https://github.com/opentender-jm/opentender-data)
 
 - copy file 'config.dist.js' to 'config.js' and make the changes to reflect your infrastructure
 
@@ -35,7 +35,11 @@ let settings = {
 	cache: {
 		type: 'internal', // disabled | internal | memcached
 		memcached: ['127.0.0.1:11211'] // if type == memcached, server address(es)
-	}};
+	},
+    country: {
+        code: 'JM'
+    }
+};
 ```
 
 ## Commands

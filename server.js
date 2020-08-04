@@ -206,9 +206,8 @@ let download_queue = async.queue((task, next) => {
 	}
 }, 6);
 
-let registerCountryApi = country => {
-	let api_path = '/api/' + (country.id || 'all') + '/';
-	let country_id = (country.id && (country.id !== 'all') ? country.id.toUpperCase() : null);
+let registerCountryApi = country_id => {
+	let api_path = '/api/';
 
 	app.post(api_path + 'autocomplete', checkCache, (req, res) => {
 		api.autocomplete(req.body.entity, req.body.field, req.body.search, country_id, (err, data) => {
@@ -366,7 +365,7 @@ let registerCountryApi = country => {
 
 
 };
-portals.forEach(registerCountryApi);
+registerCountryApi(config.country.code);
 
 // error handlers
 
