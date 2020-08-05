@@ -111,12 +111,18 @@ let importTenderPackage = (array, filename, cb) => {
 		return cb({msg: 'tenderapi schema error in filename ' + filename, errors: validateTenderAPI.errors});
 	}
 
+	console.log('Dataset is valid! Converting the dataset...')
+
 	array = converter.transform(array);
+
+	console.log('Dataset is converted. Checking converted data...')
 
 	valid = validateOpentender(array);
 	if (!valid) {
 		return cb({msg: 'opentender schema error in filename ' + filename, errors: validateOpentender.errors});
 	}
+
+	console.log('Converted data is valid! Importing dataset...')
 
 	array.forEach(item => {
 		stats[item.country] = (stats[item.country] || 0) + 1;
@@ -138,8 +144,8 @@ let importTenderPackageFile = (filename, cb) => {
 		if (err) {
 			return cb(err);
 		}
-		console.log('Importing', fullfilename);
 		let array = JSON.parse(content.toString());
+		status_tenders.max = array.length;
 		importTenderPackage(array, filename, cb);
 	});
 };
