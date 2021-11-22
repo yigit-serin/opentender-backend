@@ -1,0 +1,16 @@
+name: Remote Dispatch Action Initiator
+on:
+  push:
+    branches: [master]
+ 
+jobs:
+  backend_automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: send dispatch event
+        run: |
+          curl -X POST https://api.github.com/repos/opentender-jm/opentender/dispatches \
+          -H 'Accept: application/vnd.github.everest-preview+json' \
+          -u ${{ secrets.ACCESS_TOKEN }} \
+          --data '{"event_type": "backend_automation", "client_payload": { "repository": "'"$GITHUB_REPOSITORY"'" }}'
+
