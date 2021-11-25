@@ -34,7 +34,8 @@
     "morgan": "=1.9.0",
     "ndjson": "=1.5.0",
     "node-status": "=1.0.0",
-    "request": "=2.83.0"
+    "request": "=2.83.0",
+    "lodash.clonedeep": "=4.5.0"
   },
   "devDependencies": {
     "eslint": "4.18.1",
