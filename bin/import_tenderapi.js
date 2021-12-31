@@ -50,7 +50,7 @@ if (!Array.prototype.flatMap) {
     // eslint-disable-next-line no-extend-native
     Array.prototype.flatMap = function (f, ctx) {
         return this.reduce((r, x, i, a) => r.concat(f.call(ctx, x, i, a)), []);
-    }
+    };
 }
 
 let clearIndex = (index, cb) => {
@@ -88,6 +88,7 @@ let importBulk = (array, index, status, cb) => {
         return cb();
     }
     let bulk_packages = safeBulkPackages(array);
+
     async.forEachSeries(bulk_packages, (bulk_package, next) => {
         index.bulk_add(bulk_package, (err) => {
             if (!err) {
@@ -120,27 +121,35 @@ let importTenderPackage = (array, filename, cb) => {
         return cb({msg: 'tenderapi schema error in filename ' + filename, errors: validateTenderAPI.errors});
     }
 
-    console.log('Dataset is valid! Converting the dataset...')
+    console.log('Dataset is valid! Converting the dataset...');
 
     array = converter.transform(array);
 
-    console.log('Dataset is converted. Checking converted data...')
+    console.log('Dataset is converted. Checking converted data...');
 
     valid = validateOpentender(array);
     if (!valid) {
         return cb({msg: 'opentender schema error in filename ' + filename, errors: validateOpentender.errors});
     }
 
-    console.log('Converted data is valid! Importing dataset...')
+    console.log('Converted data is valid! Importing dataset...');
 
     array.forEach(item => {
         stats[item.country] = (stats[item.country] || 0) + 1;
     });
 
+    array.forEach(item => {
+        item.ot.indicators = Object.entries(item.ot.indicator).map(([indicator, value]) => ({
+            type: indicator,
+            value,
+            status: 'CALCULATED',
+        }));
+    });
+
     async.waterfall([
         (next) => importBuyers(array, next),
         (next) => importSuppliers(array, next),
-        (next) => importBulk(array, store.Tender, status_tenders, next)
+        (next) => importBulk(array, store.Tender, status_tenders, next),
     ], (err) => {
         cb(err);
     });
@@ -172,7 +181,7 @@ let calculateContractsCountToBuyer = (buyer, item) => {
             return sum + (lot.bids ? 1 : 0);
         }, 0);
     }
-}
+};
 
 let calculateCpvCodesToBuyer = (buyer, item) => {
     if (!item || !buyer) {
@@ -281,7 +290,7 @@ let addCountryToBuyer = (buyer, tender) => {
     if (buyer.body.address && !buyer.body.address.country) {
         buyer.body.address.country = tender.country;
     }
-}
+};
 
 let addCountryToSupplier = (supplier, tender) => {
     if (!tender || !supplier) {
@@ -293,7 +302,7 @@ let addCountryToSupplier = (supplier, tender) => {
     if (supplier.body.address && !supplier.body.address.country) {
         supplier.body.address.country = tender.country;
     }
-}
+};
 
 let calculateTotalContractsToBuyer = (buyer, item) => {
     if (!item || !buyer) {
@@ -329,14 +338,14 @@ function calculateElementaryIndicators(type, tender) {
     const extractIndicatorValue = (indicator) => indicator.value;
 
     const lotIndicators = (tender.lots || []).flatMap((lot) =>
-        (lot.indicators || []).filter(filterIndicators).flatMap(extractIndicatorValue)
+      (lot.indicators || []).filter(filterIndicators).flatMap(extractIndicatorValue),
     );
     const tenderIndicators = Object.entries(tender.ot.indicator || {})
-        .map(([key, value]) => ({type: key, value, status: 'CALCULATED'}))
-        .filter(filterIndicators).map(extractIndicatorValue);
+      .map(([key, value]) => ({type: key, value, status: 'CALCULATED'}))
+      .filter(filterIndicators).map(extractIndicatorValue);
     return {
         tender: Math.floor(tenderIndicators.length && tenderIndicators.reduce((acc, value) => acc + value, 0) / tenderIndicators.length * 10000) / 10000,
-        lot: Math.floor(lotIndicators.length && lotIndicators.reduce((acc, value) => acc + value, 0) / lotIndicators.length * 10000) / 10000
+        lot: Math.floor(lotIndicators.length && lotIndicators.reduce((acc, value) => acc + value, 0) / lotIndicators.length * 10000) / 10000,
     };
 }
 
@@ -357,7 +366,7 @@ let importBuyers = (items, cb) => {
                     id: body.id,
                     body: body,
                     countries: [],
-                    count: 0
+                    count: 0,
                 };
                 buyers.push(buyer);
             }
@@ -370,16 +379,21 @@ let importBuyers = (items, cb) => {
             calculateTotalContractsToBuyer(buyer, item);
             item.buyers[index].totalValueOfContracts = buyer.body.company.totalValueOfContracts;
             buyer.body.indicator = {};
+            buyer.ot = {};
+            buyer.ot.indicators = item.ot.indicators;
             buyer.body.indicator.elementaryIntegrityIndicators = calculateElementaryIndicators('INTEGRITY_', item);
             buyer.body.indicator.elementaryTransparencyIndicators = calculateElementaryIndicators('TRANSPARENCY_', item);
             buyer.body.indicator.transparencyIndicatorCompositionScore = Math.floor(
-                (buyer.body.indicator.elementaryTransparencyIndicators.tender +
-                    buyer.body.indicator.elementaryTransparencyIndicators.lot) / 2 * 10000
+              (buyer.body.indicator.elementaryTransparencyIndicators.tender +
+                buyer.body.indicator.elementaryTransparencyIndicators.lot) / 2 * 10000,
             ) / 10000;
             buyer.body.indicator.integrityIndicatorCompositionScore = Math.floor(
-                (buyer.body.indicator.elementaryIntegrityIndicators.tender +
-                    buyer.body.indicator.elementaryIntegrityIndicators.lot) / 2 * 10000
+              (buyer.body.indicator.elementaryIntegrityIndicators.tender +
+                buyer.body.indicator.elementaryIntegrityIndicators.lot) / 2 * 10000,
             ) / 10000;
+
+            item.buyers[index].indicator = buyer.body.indicator;
+            item.buyers[index].totalValueOfContracts = buyer.body.company.totalValueOfContracts;
 
             if (buyer.countries.indexOf(item.ot.country) < 0) {
                 buyer.countries.push(item.ot.country);
@@ -460,7 +474,7 @@ let calculateContractsCountToSupplier = (supplier, item) => {
             return sum + (lot.bids ? 1 : 0);
         }, 0);
     }
-}
+};
 
 let calculateAwardDecisionDatesToSupplier = (supplier, item) => {
     if (!item || !supplier) {
@@ -590,7 +604,7 @@ let importSuppliers = (items, cb) => {
                             id: body.id,
                             body: body,
                             count: 0,
-                            countries: []
+                            countries: [],
                         };
                         suppliers.push(supplier);
                     }
@@ -603,17 +617,22 @@ let importSuppliers = (items, cb) => {
                     calculateContractsCountToSupplier(supplier, item);
                     item.lots[i1].bids[i2].bidders[i3].contractsCount = supplier.body.contractsCount;
                     item.lots[i1].bids[i2].bidders[i3].totalValueOfContracts = supplier.body.company.totalValueOfContracts;
+                    supplier.ot = {};
+                    supplier.ot.indicators = item.ot.indicators;
                     supplier.body.indicator = {};
                     supplier.body.indicator.elementaryIntegrityIndicators = calculateElementaryIndicators('INTEGRITY_', item);
                     supplier.body.indicator.elementaryTransparencyIndicators = calculateElementaryIndicators('TRANSPARENCY_', item);
                     supplier.body.indicator.transparencyIndicatorCompositionScore = Math.floor(
-                        (supplier.body.indicator.elementaryTransparencyIndicators.tender +
-                            supplier.body.indicator.elementaryTransparencyIndicators.lot) / 2 * 10000
+                      (supplier.body.indicator.elementaryTransparencyIndicators.tender +
+                        supplier.body.indicator.elementaryTransparencyIndicators.lot) / 2 * 10000,
                     ) / 10000;
                     supplier.body.indicator.integrityIndicatorCompositionScore = Math.floor(
-                        (supplier.body.indicator.elementaryIntegrityIndicators.tender +
-                            supplier.body.indicator.elementaryIntegrityIndicators.lot) / 2 * 10000
+                      (supplier.body.indicator.elementaryIntegrityIndicators.tender +
+                        supplier.body.indicator.elementaryIntegrityIndicators.lot) / 2 * 10000,
                     ) / 10000;
+
+                    item.lots[i1].bids[i2].bidders[i3].indicator = supplier.body.indicator;
+                    item.lots[i1].bids[i2].bidders[i3].totalValueOfContracts = supplier.body.company.totalValueOfContracts;
 
                     supplier.count++;
                     if (supplier.countries.indexOf(item.ot.country) < 0) {
@@ -639,7 +658,7 @@ let importSuppliers = (items, cb) => {
         supplier.body.sector.mostFrequentMarket = {
             key: cpv[0],
             label,
-        }
+        };
         supplier.body.sector.cpvCodes = supplier.body.sector.cpvs.map((cpv) => cpv);
         supplier.body.sector.cpvs = supplier.body.sector.cpvs.map((cpv) => {
             return {
@@ -705,6 +724,8 @@ let importTenderPackageFiles = (filename, cb) => {
 
 
 importTenderPackageFiles('JM-dataset.json', err => {
+// importTenderPackageFiles('KE-dataset-light.json', err => {
+// importTenderPackageFiles('tenderapi_0000_2015-01-01T00-00-00-000.json', err => {
     if (err) {
         console.log(err);
     }
