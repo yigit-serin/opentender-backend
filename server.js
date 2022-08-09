@@ -13,6 +13,9 @@ const Cache = require('./lib/cache.js');
 const config = require('./config.js');
 const crypto = require('crypto');
 const pck = require('./package.json');
+const moment = require('moment');
+const XLSX = require('xlsx');
+const AWS = require('aws-sdk');
 
 let portals = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'portals.json')).toString());
 let portals_geojson = JSON.parse(fs.readFileSync(path.join(config.data.shared, 'countries.geo.json')).toString());
@@ -363,6 +366,26 @@ let registerCountryApi = country_id => {
 		});
 	});
 
+	app.post(api_path + 'save-form-download-datasets', async (req, res, next) => {
+		api.saveFormDownloads(req, (err, data) => {
+			if (err) {
+				console.log(err, req.originalUrl);
+				if (err === 404) {
+					return res.status(404).json({error: 'Form not found'});
+				} else if (err === 400) {
+					return res.status(400).json({error: 'Invalid data'});
+				}
+
+				return res.status(500);
+			}
+
+			return res.json(data);
+		});
+	});
+
+	app.get(api_path + 'export/forms-download-datasets', async (req, res, next) => {
+		api.exportSaveFormDownloads(req, res);
+	});
 
 };
 registerCountryApi(config.country.code);

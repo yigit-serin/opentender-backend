@@ -69,6 +69,7 @@ let openDB = (cb) => {
         (next) => clearIndex(store.Tender, next),
         (next) => clearIndex(store.Buyer, next),
         (next) => clearIndex(store.Supplier, next),
+        (next) => clearIndex(store.Downloads, next),
     ], (err) => {
         cb(err);
     });
