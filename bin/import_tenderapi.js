@@ -39,10 +39,16 @@ let tender_count = 0;
 let stats = {};
 
 const validator = (filename) => {
-    const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
+    const ajv = new Ajv(
+        {
+            verbose: true,
+            allowUnionTypes: true,
+            allErrors: true
+        }
+    );
     const schema = JSON.parse(fs.readFileSync(path.resolve(config.data.shared, filename)).toString());
     return ajv.compile(schema);
-};
+}
 
 const validateOpentender = validator('schema.json');
 const validateTenderAPI = validator('tenderapi.json');
