@@ -4,3 +4,4 @@ storage/
 npm-debug.log
 .idea
 config.js
+.env

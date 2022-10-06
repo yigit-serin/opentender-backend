@@ -17,7 +17,6 @@ const fs = require('fs');
 const async = require('async');
 const Ajv = require('ajv');
 const status = require('node-status');
-const cloneDeep = require('lodash.clonedeep');
 
 const console = status.console();
 
@@ -31,6 +30,9 @@ const Converter = require('../lib/convert.js');
 const Utils = require('../lib/utils');
 
 const config = require('../config.js');
+config.data.path = '../../data/backend'
+config.data.shared = '../../data/shared'
+config.data.tenderapi = '../../data/tenderapi'
 const data_path = config.data.tenderapi;
 const store = new Store(config);
 const library = new Library(config);
@@ -39,10 +41,16 @@ let tender_count = 0;
 let stats = {};
 
 const validator = (filename) => {
-    const ajv = new Ajv({verbose: true, jsonPointers: true, allErrors: true});
+    const ajv = new Ajv(
+        {
+            verbose: true,
+            allowUnionTypes: true,
+            allErrors: true
+        }
+    );
     const schema = JSON.parse(fs.readFileSync(path.resolve(config.data.shared, filename)).toString());
     return ajv.compile(schema);
-};
+}
 
 const validateOpentender = validator('schema.json');
 const validateTenderAPI = validator('tenderapi.json');
@@ -69,7 +77,6 @@ let openDB = (cb) => {
         (next) => clearIndex(store.Tender, next),
         (next) => clearIndex(store.Buyer, next),
         (next) => clearIndex(store.Supplier, next),
-        (next) => clearIndex(store.Downloads, next),
     ], (err) => {
         cb(err);
     });
@@ -464,13 +471,11 @@ let importBuyers = (items, cb) => {
        })
       }
 
-      if (valid && item.lots && item.lots.length) {
-       item.lots.forEach((lot) => {
-        if (lot.finalPrice) {
-         buyer.body.company.totalValueOfContracts += lot.finalPrice.netAmountNational
-        }
-       })
-      }
+
+     if (valid) {
+         buyer.body.company.totalValueOfContracts += item.finalPrice ? item.finalPrice.netAmountNational :  0;
+     }
+
      })
      buyer.body.company.totalValueOfContracts /= 100
      buyer.body.company.totalValueOfContracts = Utils.roundValueTwoDecimals(buyer.body.company.totalValueOfContracts)
@@ -759,13 +764,11 @@ let importSuppliers = (items, cb) => {
         supplier.ot.indicator[key] += item.ot.indicator[key]
        })
       }
-      if (valid && item.lots && item.lots.length) {
-       item.lots.forEach((lot) => {
-        if (lot.finalPrice) {
-         supplier.body.company.totalValueOfContracts += lot.finalPrice.netAmountNational
-        }
-       })
-      }
+
+     if (valid) {
+         supplier.body.company.totalValueOfContracts += item.finalPrice ? item.finalPrice.netAmountNational :  0;
+     }
+
      })
      supplier.body.company.totalValueOfContracts /= 100
      supplier.body.company.totalValueOfContracts = Utils.roundValueTwoDecimals(supplier.body.company.totalValueOfContracts)

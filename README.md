@@ -17,27 +17,29 @@ written in Javascript for NodeJS 8.x & Elasticsearch 2.4.6
 - copy file 'config.dist.js' to 'config.js' and make the changes to reflect your infrastructure
 
 ```javascript
-let settings = {
-	listen: {  // where the backend should be listening
-		host: '127.0.0.1',
-		port: 3001
-	},
-	elastic: { // where elasticsearch is listening
-		host: '127.0.0.1',
-		port: 9200,
-		log: ['info', 'error']
-	},
-	data: { // absolute paths to the data folders (see https://github.com/opentender-jm/opentender-data)
-		shared: '/var/www/opentender/data/shared',
-		path: '/var/www/opentender/data/backend',
-		tenderapi: '/var/www/opentender/data/tenderapi'
-	},
-	cache: {
-		type: 'internal', // disabled | internal | memcached
-		memcached: ['127.0.0.1:11211'] // if type == memcached, server address(es)
-	},
+const envMapping = {
+    listen: {
+        // where the backend should be listening
+        host: process.env.SERVER_HOST,
+        port: Number.parseInt(process.env.SERVER_PORT),
+    },
+    elastic: {
+        // where elastic search is listening
+        host: process.env.ELASTIC_HOST,
+        port: Number.parseInt(process.env.ELASTIC_PORT),
+        log: String(process.env.ELASTIC_LOG).split(','),
+    },
+    data: { // absolute paths to the data folders (see https://github.com/opentender-ug/opentender-data)
+        shared: '../data/shared',
+        path: '../data/backend',
+        tenderapi: '../data/tenderapi'
+    },
+    cache: {
+        type: process.env.CACHE_TYPE, // disabled | internal | memcached
+        memcached: String(process.env.CACHE_MEMCACHED).split(',') // if type == memcached, server address(es)
+    },
     country: {
-        code: 'JM'
+        code: process.env.COUNTRY_CODE
     }
 };
 ```
